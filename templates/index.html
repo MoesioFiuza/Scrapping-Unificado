@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scraper Unificado - Sistema de Raspagem de Processos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="header-content">
+                <div class="logo">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    <h1>Scraper Unificado</h1>
+                </div>
+                <p class="subtitle">Sistema Inteligente de Raspagem de Processos Judiciais</p>
+            </div>
+        </header>
+        
+        <main class="app-main">
+            <!-- Upload Section -->
+            <section class="card upload-section">
+                <div class="card-header">
+                    <div class="card-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2>Upload de Planilha</h2>
+                        <p class="card-description">Envie sua planilha com os números dos processos</p>
+                    </div>
+                </div>
+                
+                <form id="uploadForm" enctype="multipart/form-data" class="upload-form">
+                    <div class="file-upload-area" id="fileUploadArea">
+                        <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" required>
+                        <div class="file-upload-content">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="file-icon">
+                                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                            <p class="file-upload-text">
+                                <span class="file-upload-main">Clique para selecionar</span>
+                                <span class="file-upload-sub">ou arraste o arquivo aqui</span>
+                            </p>
+                            <p class="file-upload-formats">Formatos aceitos: .xlsx, .xls, .csv</p>
+                        </div>
+                        <div class="file-selected" id="fileSelected" style="display: none;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 11.08V12a10 10 0 11-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
+                            <span id="fileName"></span>
+                            <button type="button" class="file-remove" id="fileRemove">×</button>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-large" id="uploadBtn">
+                        <span class="btn-content">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            <span>Enviar e Processar</span>
+                        </span>
+                        <span class="btn-loader" style="display: none;">
+                            <span class="spinner"></span>
+                            <span>Processando...</span>
+                        </span>
+                    </button>
+                </form>
+                
+                <div id="uploadStatus" class="status-message" style="display: none;"></div>
+            </section>
+            
+            <!-- Processos Section -->
+            <section class="card processos-section" id="processosSection" style="display: none;">
+                <div class="card-header">
+                    <div class="card-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 11l3 3L22 4"></path>
+                            <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
+                        </svg>
+                    </div>
+                    <div class="card-header-content">
+                        <div>
+                            <h2>Processos Identificados</h2>
+                            <p class="card-description" id="processosCount"></p>
+                        </div>
+                        <div class="stats-badge" id="processosStats"></div>
+                    </div>
+                </div>
+                
+                <div class="processos-container">
+                    <div id="processosList" class="processos-grid"></div>
+                </div>
+                
+                <div class="card-actions">
+                    <button id="iniciarScraping" class="btn btn-primary btn-large">
+                        <span class="btn-content">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                            </svg>
+                            <span>Iniciar Scraping</span>
+                        </span>
+                        <span class="btn-loader" style="display: none;">
+                            <span class="spinner"></span>
+                            <span>Processando...</span>
+                        </span>
+                    </button>
+                </div>
+            </section>
+            
+            <!-- Resultados Section -->
+            <section class="card resultados-section" id="resultadosSection" style="display: none;">
+                <div class="card-header">
+                    <div class="card-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                        </svg>
+                    </div>
+                    <div class="card-header-content">
+                        <div>
+                            <h2>Resultados da Raspagem</h2>
+                            <p class="card-description" id="resultadosCount"></p>
+                        </div>
+                        <div class="stats-badge" id="resultadosStats"></div>
+                    </div>
+                </div>
+                
+                <div class="resultados-container">
+                    <div id="resultadosList" class="resultados-grid"></div>
+                </div>
+                
+                <div class="card-actions">
+                    <button id="exportarResultados" class="btn btn-success btn-large">
+                        <span class="btn-content">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            <span>Exportar para Excel</span>
+                        </span>
+                    </button>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+    
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
