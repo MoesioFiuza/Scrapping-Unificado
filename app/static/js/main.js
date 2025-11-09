@@ -3,9 +3,8 @@ let isScraping = false;
 let scrapingSessionId = null;
 let pollingInterval = null;
 let abortRequested = false;
-let tribunaisMap = {}; // Mapa de códigos para nomes
+let tribunaisMap = {};
 
-// Toast notification
 function showToast(message, type = 'success') {
     const toast = document.getElementById('toast');
     toast.textContent = message;
@@ -15,7 +14,6 @@ function showToast(message, type = 'success') {
     }, 3000);
 }
 
-// File upload handling
 const fileInput = document.getElementById('fileInput');
 const fileUploadArea = document.getElementById('fileUploadArea');
 const fileSelected = document.getElementById('fileSelected');
@@ -38,7 +36,6 @@ fileRemove.addEventListener('click', (e) => {
     fileUploadArea.querySelector('.file-upload-content').style.display = 'block';
 });
 
-// Drag and drop
 fileUploadArea.addEventListener('dragover', (e) => {
     e.preventDefault();
     fileUploadArea.classList.add('dragover');
@@ -57,7 +54,6 @@ fileUploadArea.addEventListener('drop', (e) => {
     }
 });
 
-// Upload form
 document.getElementById('uploadForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const fileInput = document.getElementById('fileInput');
@@ -72,7 +68,6 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
     const formData = new FormData();
     formData.append('file', fileInput.files[0]);
     
-    // Show loading state
     uploadBtn.disabled = true;
     uploadBtn.querySelector('.btn-content').style.display = 'none';
     uploadBtn.querySelector('.btn-loader').style.display = 'flex';
@@ -115,7 +110,6 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
     }
 });
 
-// Carregar tribunais disponíveis
 async function carregarTribunais() {
     const container = document.getElementById('tribunaisContainer');
     
@@ -124,12 +118,10 @@ async function carregarTribunais() {
         const data = await response.json();
         
         if (data.success && data.tribunais) {
-            // Criar mapa de códigos para nomes
             data.tribunais.forEach(t => {
                 tribunaisMap[t.codigo] = t.nome;
             });
             
-            // Exibir tribunais na sidebar
             container.innerHTML = `
                 ${data.tribunais.map(t => `
                     <div class="tribunal-badge">
@@ -155,7 +147,6 @@ async function carregarTribunais() {
     }
 }
 
-// Função auxiliar para obter nome do tribunal
 function getTribunalNome(codigo) {
     return tribunaisMap[codigo] || codigo || 'Não identificado';
 }
@@ -229,17 +220,123 @@ function atualizarProcesso(numeroProcesso, resultado) {
     }
 }
 
-// Iniciar scraping
+function saveScrapingState() {
+    if (scrapingSessionId) {
+        localStorage.setItem('scrapingSessionId', scrapingSessionId);
+        localStorage.setItem('processosData', JSON.stringify(processosData));
+        localStorage.setItem('isScraping', 'true');
+        console.log('Estado do scraping salvo no localStorage');
+    }
+}
+
+function loadScrapingState() {
+    const savedSessionId = localStorage.getItem('scrapingSessionId');
+    const savedProcessosData = localStorage.getItem('processosData');
+    const savedIsScraping = localStorage.getItem('isScraping');
+    
+    if (savedSessionId && savedIsScraping === 'true') {
+        console.log('Sessão de scraping detectada no localStorage:', savedSessionId);
+        
+        scrapingSessionId = savedSessionId;
+        isScraping = true;
+        
+        if (savedProcessosData) {
+            try {
+                processosData = JSON.parse(savedProcessosData);
+            } catch (e) {
+                console.error('Erro ao restaurar processosData:', e);
+            }
+        }
+        
+        verificarSessaoAtiva(savedSessionId);
+    }
+}
+
+async function verificarSessaoAtiva(sessionId) {
+    try {
+        const response = await fetch(`/api/processos/status/${sessionId}`);
+        
+        if (!response.ok) {
+            limparEstadoScraping();
+            return;
+        }
+        
+        const data = await response.json();
+        
+        if (data.status === 'error' && data.error && data.error.includes('Sessão não encontrada')) {
+            limparEstadoScraping();
+            showToast('A sessão anterior expirou. Por favor, inicie um novo scraping.', 'info');
+            return;
+        }
+        
+        console.log('Sessão ainda ativa, reconectando...');
+        
+        const processosSection = document.getElementById('processosSection');
+        if (processosSection) {
+            processosSection.style.display = 'block';
+        }
+        
+        if (data.resultados_parciais && data.resultados_parciais.length > 0) {
+            data.resultados_parciais.forEach((resultado) => {
+                atualizarProcesso(resultado.numero_processo, resultado);
+            });
+        }
+        
+        const actionButton = document.getElementById('actionButton');
+        const abortButton = document.getElementById('abortarScraping');
+        
+        if (actionButton) {
+            if (data.status === 'completed') {
+                finalizarScraping();
+            } else if (data.status === 'processing' || data.status === 'starting') {
+                actionButton.disabled = true;
+                const btnContent = actionButton.querySelector('.btn-content');
+                const btnLoader = actionButton.querySelector('.btn-loader');
+                if (btnContent) btnContent.style.display = 'none';
+                if (btnLoader) btnLoader.style.display = 'flex';
+            }
+        }
+        
+        if (abortButton && data.status !== 'completed' && data.status !== 'aborted') {
+            abortButton.style.cssText = 'display: inline-flex !important;';
+            abortButton.disabled = false;
+        }
+        
+        if (data.status === 'processing' || data.status === 'starting') {
+            startPolling();
+            showToast('Sessão de scraping em andamento detectada. Reconectando...', 'info');
+        } else if (data.status === 'completed') {
+            if (data.resultados) {
+                data.resultados.forEach((resultado) => {
+                    atualizarProcesso(resultado.numero_processo, resultado);
+                });
+            }
+            finalizarScraping();
+            showToast('Scraping anterior já foi concluído.', 'success');
+        }
+        
+    } catch (error) {
+        console.error('Erro ao verificar sessão:', error);
+        limparEstadoScraping();
+    }
+}
+
+function limparEstadoScraping() {
+    localStorage.removeItem('scrapingSessionId');
+    localStorage.removeItem('processosData');
+    localStorage.removeItem('isScraping');
+    scrapingSessionId = null;
+    isScraping = false;
+}
+
 document.getElementById('actionButton')?.addEventListener('click', async () => {
     const button = document.getElementById('actionButton');
     
-    // Verificar se o botão está no modo de exportar (tem classe btn-success)
     if (button.classList.contains('btn-success')) {
         exportarResultados();
         return;
     }
     
-    // Se estiver fazendo scraping, não fazer nada
     if (isScraping) {
         return;
     }
@@ -258,7 +355,6 @@ document.getElementById('actionButton')?.addEventListener('click', async () => {
     if (btnContent) btnContent.style.display = 'none';
     if (btnLoader) btnLoader.style.display = 'flex';
     
-    // FORÇAR exibição do botão abortar
     abortButton.removeAttribute('style');
     abortButton.style.cssText = 'display: inline-flex !important;';
     abortButton.disabled = false;
@@ -266,7 +362,6 @@ document.getElementById('actionButton')?.addEventListener('click', async () => {
     isScraping = true;
     abortRequested = false;
     
-    // Marcar todos como processando
     processosData.forEach(p => {
         if (p.status === 'pendente') {
             p.status = 'processando';
@@ -286,6 +381,7 @@ document.getElementById('actionButton')?.addEventListener('click', async () => {
         const data = await response.json();
         if (data.success && data.session_id) {
             scrapingSessionId = data.session_id;
+            saveScrapingState();
             startPolling();
         } else {
             showToast('Erro: ' + (data.error || 'Erro desconhecido'), 'error');
@@ -379,6 +475,7 @@ function stopPolling() {
 function finalizarScraping() {
     isScraping = false;
     scrapingSessionId = null;
+    limparEstadoScraping();
     
     const button = document.getElementById('actionButton');
     const abortButton = document.getElementById('abortarScraping');
@@ -410,22 +507,20 @@ function finalizarScraping() {
     if (btnContent) btnContent.style.display = 'flex';
     if (btnLoader) btnLoader.style.display = 'none';
     
-    // FORÇAR remoção de btn-primary e adição de btn-success
     button.classList.remove('btn-primary');
     button.classList.add('btn-success');
     
-    // FORÇAR esconder botão abortar
     if (abortButton) {
         abortButton.style.cssText = 'display: none !important;';
     }
     
-    // Forçar atualização visual
-    button.offsetHeight; // Trigger reflow
+    button.offsetHeight;
 }
 
 function resetScrapingState() {
     isScraping = false;
     scrapingSessionId = null;
+    limparEstadoScraping();
     stopPolling();
     
     const button = document.getElementById('actionButton');
@@ -436,7 +531,6 @@ function resetScrapingState() {
         return;
     }
     
-    // Reverter processos pendentes que estavam processando
     processosData.forEach(p => {
         if (p.status === 'processando') {
             p.status = 'pendente';
@@ -447,20 +541,14 @@ function resetScrapingState() {
     button.disabled = false;
     const btnContent = button.querySelector('.btn-content');
     const btnLoader = button.querySelector('.btn-loader');
-    
     if (btnContent) btnContent.style.display = 'flex';
     if (btnLoader) btnLoader.style.display = 'none';
-    
-    // Remover classe btn-success se existir
     button.classList.remove('btn-success');
     button.classList.add('btn-primary');
-    
-    // Esconder botão abortar
     abortButton.style.display = 'none';
     abortButton.style.setProperty('display', 'none', 'important');
 }
 
-// Abortar scraping
 document.getElementById('abortarScraping')?.addEventListener('click', async () => {
     if (!scrapingSessionId) return;
     
@@ -473,22 +561,22 @@ document.getElementById('abortarScraping')?.addEventListener('click', async () =
             method: 'POST'
         });
         
-        const data = await response.json();
-        if (data.success) {
-            stopPolling();
+        if (response.ok) {
+            limparEstadoScraping(); 
             resetScrapingState();
-            showToast('Scraping abortado com sucesso', 'error');
+            showToast('Scraping abortado com sucesso', 'info');
         } else {
-            showToast('Erro ao abortar: ' + data.error, 'error');
+            showToast('Erro ao abortar scraping', 'error');
+            abortRequested = false;
             abortButton.disabled = false;
         }
     } catch (error) {
         showToast('Erro ao abortar scraping: ' + error.message, 'error');
+        abortRequested = false;
         abortButton.disabled = false;
     }
 });
 
-// Exportar resultados
 function exportarResultados() {
     const button = document.getElementById('actionButton');
     button.disabled = true;
@@ -551,12 +639,11 @@ function exportarResultados() {
     });
 }
 
-// Carregar tribunais ao iniciar
 document.addEventListener('DOMContentLoaded', () => {
     carregarTribunais();
+    loadScrapingState(); 
 });
 
-/* Garantir que botão abortar apareça quando necessário */
 document.addEventListener('DOMContentLoaded', () => {
     const abortButton = document.getElementById('abortarScraping');
     if (abortButton) {
