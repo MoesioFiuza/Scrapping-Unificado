@@ -252,12 +252,16 @@ document.getElementById('actionButton')?.addEventListener('click', async () => {
     }
     
     button.disabled = true;
-    button.querySelector('.btn-content').style.display = 'none';
-    button.querySelector('.btn-loader').style.display = 'flex';
+    const btnContent = button.querySelector('.btn-content');
+    const btnLoader = button.querySelector('.btn-loader');
     
-    // Mostrar botão abortar (usar !important via setAttribute)
-    abortButton.style.display = 'inline-flex';
-    abortButton.style.setProperty('display', 'inline-flex', 'important');
+    if (btnContent) btnContent.style.display = 'none';
+    if (btnLoader) btnLoader.style.display = 'flex';
+    
+    // FORÇAR exibição do botão abortar
+    abortButton.removeAttribute('style');
+    abortButton.style.cssText = 'display: inline-flex !important;';
+    abortButton.disabled = false;
     
     isScraping = true;
     abortRequested = false;
@@ -379,8 +383,8 @@ function finalizarScraping() {
     const button = document.getElementById('actionButton');
     const abortButton = document.getElementById('abortarScraping');
     
-    if (!button || !abortButton) {
-        console.error('Botões não encontrados!');
+    if (!button) {
+        console.error('Botão actionButton não encontrado!');
         return;
     }
     
@@ -406,12 +410,17 @@ function finalizarScraping() {
     if (btnContent) btnContent.style.display = 'flex';
     if (btnLoader) btnLoader.style.display = 'none';
     
+    // FORÇAR remoção de btn-primary e adição de btn-success
     button.classList.remove('btn-primary');
     button.classList.add('btn-success');
     
-    // Esconder botão abortar
-    abortButton.style.display = 'none';
-    abortButton.style.setProperty('display', 'none', 'important');
+    // FORÇAR esconder botão abortar
+    if (abortButton) {
+        abortButton.style.cssText = 'display: none !important;';
+    }
+    
+    // Forçar atualização visual
+    button.offsetHeight; // Trigger reflow
 }
 
 function resetScrapingState() {
@@ -545,4 +554,12 @@ function exportarResultados() {
 // Carregar tribunais ao iniciar
 document.addEventListener('DOMContentLoaded', () => {
     carregarTribunais();
+});
+
+/* Garantir que botão abortar apareça quando necessário */
+document.addEventListener('DOMContentLoaded', () => {
+    const abortButton = document.getElementById('abortarScraping');
+    if (abortButton) {
+        abortButton.style.setProperty('display', 'inline-flex', 'important');
+    }
 });
