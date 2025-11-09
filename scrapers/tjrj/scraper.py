@@ -37,6 +37,13 @@ class PJeScraperTJRJ(BaseScraper):
                 chrome_options.add_argument("--window-size=1920,1080")
                 chrome_options.add_argument("--start-maximized")
                 chrome_options.add_argument("--disable-extensions")
+                chrome_options.add_argument("--disable-software-rasterizer")
+                chrome_options.add_argument("--disable-background-timer-throttling")
+                chrome_options.add_argument("--disable-backgrounding-occluded-windows")
+                chrome_options.add_argument("--disable-renderer-backgrounding")
+                chrome_options.add_argument("--disable-features=TranslateUI")
+                chrome_options.add_argument("--disable-ipc-flooding-protection")
+                chrome_options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36")
                 print("Modo headless ativado")
             else:
                 if CHROME_USER_DATA_DIR:
@@ -94,7 +101,7 @@ class PJeScraperTJRJ(BaseScraper):
             # Acessar página de consulta
             print(f"Acessando: {self.url_consulta}")
             self.driver.get(self.url_consulta)
-            time.sleep(3)
+            time.sleep(5)
             
             # Localizar e preencher campo de número do processo
             campo_processo_id = "fPP:numProcesso-inputNumeroProcessoDecoration:numProcesso-inputNumeroProcesso"
