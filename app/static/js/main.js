@@ -246,10 +246,18 @@ document.getElementById('actionButton')?.addEventListener('click', async () => {
     
     const abortButton = document.getElementById('abortarScraping');
     
+    if (!abortButton) {
+        console.error('Botão abortarScraping não encontrado!');
+        return;
+    }
+    
     button.disabled = true;
     button.querySelector('.btn-content').style.display = 'none';
     button.querySelector('.btn-loader').style.display = 'flex';
+    
+    // Mostrar botão abortar (usar !important via setAttribute)
     abortButton.style.display = 'inline-flex';
+    abortButton.style.setProperty('display', 'inline-flex', 'important');
     
     isScraping = true;
     abortRequested = false;
@@ -291,7 +299,7 @@ function startPolling() {
     }
     
     let consecutiveErrors = 0;
-    const maxErrors = 3; // Parar após 3 erros consecutivos
+    const maxErrors = 3;
     
     pollingInterval = setInterval(async () => {
         if (!scrapingSessionId || abortRequested) {
@@ -301,12 +309,21 @@ function startPolling() {
         
         try {
             const response = await fetch(`/api/processos/status/${scrapingSessionId}`);
+            
+            if (!response.ok) {
+                consecutiveErrors++;
+                if (consecutiveErrors >= maxErrors) {
+                    stopPolling();
+                    resetScrapingState();
+                    showToast('Erro ao verificar status. Por favor, tente novamente.', 'error');
+                }
+                return;
+            }
+            
             const data = await response.json();
             
             // Resetar contador de erros se a requisição foi bem-sucedida
-            if (response.ok) {
-                consecutiveErrors = 0;
-            }
+            consecutiveErrors = 0;
             
             if (data.status === 'completed') {
                 stopPolling();
@@ -323,15 +340,12 @@ function startPolling() {
                 resetScrapingState();
                 showToast('Scraping abortado pelo usuário', 'error');
             } else if (data.status === 'error') {
-                consecutiveErrors++;
-                if (consecutiveErrors >= maxErrors || data.error) {
-                    stopPolling();
-                    resetScrapingState();
-                    showToast(data.error || 'Sessão de scraping perdida. Por favor, tente novamente.', 'error');
-                }
+                stopPolling();
+                resetScrapingState();
+                showToast(data.error || 'Erro no scraping. Por favor, tente novamente.', 'error');
             } else if (data.status === 'processing' || data.status === 'starting') {
                 // Atualizar processos que foram processados
-                if (data.resultados_parciais) {
+                if (data.resultados_parciais && data.resultados_parciais.length > 0) {
                     data.resultados_parciais.forEach((resultado) => {
                         atualizarProcesso(resultado.numero_processo, resultado);
                     });
@@ -365,21 +379,39 @@ function finalizarScraping() {
     const button = document.getElementById('actionButton');
     const abortButton = document.getElementById('abortarScraping');
     
+    if (!button || !abortButton) {
+        console.error('Botões não encontrados!');
+        return;
+    }
+    
     // Mudar botão para exportar
     const icon = button.querySelector('.action-icon');
     const text = button.querySelector('.action-text');
     const loaderText = button.querySelector('.loader-text');
     
-    icon.innerHTML = '<path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>';
-    text.textContent = 'Exportar para Excel';
-    loaderText.textContent = 'Exportando...';
+    if (icon) {
+        icon.innerHTML = '<path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>';
+    }
+    if (text) {
+        text.textContent = 'Exportar para Excel';
+    }
+    if (loaderText) {
+        loaderText.textContent = 'Exportando...';
+    }
     
     button.disabled = false;
-    button.querySelector('.btn-content').style.display = 'flex';
-    button.querySelector('.btn-loader').style.display = 'none';
+    const btnContent = button.querySelector('.btn-content');
+    const btnLoader = button.querySelector('.btn-loader');
+    
+    if (btnContent) btnContent.style.display = 'flex';
+    if (btnLoader) btnLoader.style.display = 'none';
+    
     button.classList.remove('btn-primary');
     button.classList.add('btn-success');
+    
+    // Esconder botão abortar
     abortButton.style.display = 'none';
+    abortButton.style.setProperty('display', 'none', 'important');
 }
 
 function resetScrapingState() {
@@ -390,6 +422,11 @@ function resetScrapingState() {
     const button = document.getElementById('actionButton');
     const abortButton = document.getElementById('abortarScraping');
     
+    if (!button || !abortButton) {
+        console.error('Botões não encontrados!');
+        return;
+    }
+    
     // Reverter processos pendentes que estavam processando
     processosData.forEach(p => {
         if (p.status === 'processando') {
@@ -399,9 +436,19 @@ function resetScrapingState() {
     mostrarProcessos(processosData);
     
     button.disabled = false;
-    button.querySelector('.btn-content').style.display = 'flex';
-    button.querySelector('.btn-loader').style.display = 'none';
+    const btnContent = button.querySelector('.btn-content');
+    const btnLoader = button.querySelector('.btn-loader');
+    
+    if (btnContent) btnContent.style.display = 'flex';
+    if (btnLoader) btnLoader.style.display = 'none';
+    
+    // Remover classe btn-success se existir
+    button.classList.remove('btn-success');
+    button.classList.add('btn-primary');
+    
+    // Esconder botão abortar
     abortButton.style.display = 'none';
+    abortButton.style.setProperty('display', 'none', 'important');
 }
 
 // Abortar scraping
