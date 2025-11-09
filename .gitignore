@@ -1,30 +1,37 @@
-# Ambiente virtual
-venv/
-env/
-ENV/
-
-# Arquivos Python
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
+venv/
+env/
+ENV/
+.venv
 
-# Arquivos de ambiente
+# Flask
+instance/
+.webassets-cache
+
+# Dados
+data/input/*
+data/output/*
+!data/input/.gitkeep
+!data/output/.gitkeep
+
+# Ambiente
 .env
-.env.local
+*.env
 
-# IDEs
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# Arquivos de dados
-data/input/*
-data/output/*
-!data/input/.gitkeep
-!data/output/.gitkeep
+# OS
+.DS_Store
+Thumbs.db
 
 # Logs
 *.log

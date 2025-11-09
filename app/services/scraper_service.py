@@ -130,15 +130,18 @@ class ScraperService:
     def _obter_mensagem_amigavel(self, exception: Exception) -> str:
         error_str = str(exception).lower()
         
-        if 'no such element' in error_str or 'unable to locate' in error_str:
+        if 'no such window' in error_str or 'target window already closed' in error_str or 'web view not found' in error_str:
+            return 'A janela do navegador foi fechada durante o processamento.'
+        elif 'no such element' in error_str or 'unable to locate' in error_str:
             return 'Não foi possível localizar elementos na página.'
         elif 'timeout' in error_str:
             return 'Tempo de espera esgotado. Tente novamente.'
-        elif 'session' in error_str or 'chrome' in error_str:
+        elif 'invalid session id' in error_str or 'session' in error_str or 'chrome' in error_str:
             return 'Erro na conexão com o navegador.'
         elif 'not found' in error_str:
             return 'Processo não encontrado.'
         elif 'network' in error_str or 'connection' in error_str:
             return 'Erro de conexão. Verifique sua internet.'
         else:
+
             return 'Erro ao processar o processo. Tente novamente.'

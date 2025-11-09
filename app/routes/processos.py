@@ -2,10 +2,111 @@ from flask import Blueprint, request, jsonify
 from app.services.scraper_service import ScraperService
 import asyncio
 import traceback
+import uuid
+import threading
+from collections import defaultdict
 
 bp = Blueprint('processos', __name__, url_prefix='/api')
 
 scraper_service = ScraperService()
+
+scraping_sessions = {}
+
+def processar_scraping_async(session_id, processos):
+    try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+        session_data = scraping_sessions[session_id]
+        session_data['status'] = 'processing'
+        session_data['resultados_parciais'] = {}
+        
+        total = len(processos)
+        processos_por_tribunal = defaultdict(list)
+        processos_sem_tribunal = []
+        
+        for idx, processo in enumerate(processos):
+            if session_data.get('aborted', False):
+                break
+                
+            tribunal = processo.get('tribunal')
+            if tribunal:
+                processos_por_tribunal[tribunal].append((idx, processo))
+            else:
+                processos_sem_tribunal.append((idx, processo))
+        
+        resultados_dict = {}
+        
+        for tribunal_key, lista_processos in processos_por_tribunal.items():
+            if session_data.get('aborted', False):
+                break
+                
+            for idx, processo in lista_processos:
+                if session_data.get('aborted', False):
+                    break
+                
+                numero_processo = processo['numero_processo']
+                
+                # Marcar como processando
+                resultado_temp = {
+                    'numero_processo': numero_processo,
+                    'tribunal': tribunal_key,
+                    'status': 'processando',
+                    'dados': None,
+                    'erro': None
+                }
+                resultados_dict[idx] = resultado_temp
+                session_data['resultados_parciais'][numero_processo] = resultado_temp
+                
+                # Processar
+                resultado = loop.run_until_complete(
+                    scraper_service.processar_processo(
+                        numero_processo,
+                        tribunal_key
+                    )
+                )
+                resultados_dict[idx] = resultado
+                session_data['resultados_parciais'][numero_processo] = resultado
+            
+            # Fechar abas do tribunal após processar todos os processos
+            if not session_data.get('aborted', False):
+                scraper_service._fechar_abas_tribunal(tribunal_key)
+        
+        for idx, processo in processos_sem_tribunal:
+            if session_data.get('aborted', False):
+                break
+            numero_processo = processo.get('numero_processo', '')
+            resultado = {
+                'numero_processo': numero_processo,
+                'tribunal': None,
+                'status': 'erro',
+                'erro': 'Tribunal não identificado'
+            }
+            resultados_dict[idx] = resultado
+            session_data['resultados_parciais'][numero_processo] = resultado
+        
+        if not session_data.get('aborted', False):
+            resultados = [resultados_dict[idx] for idx in range(len(processos))]
+            session_data['resultados'] = resultados
+            session_data['status'] = 'completed'
+        else:
+            session_data['status'] = 'aborted'
+        
+        # Fechar todos os scrapers no final
+        scraper_service.fechar_scrapers()
+        
+        loop.close()
+    except Exception as e:
+        session_data['status'] = 'error'
+        # Usar mensagem amigável ao invés da trace completa
+        mensagem_amigavel = scraper_service._obter_mensagem_amigavel(e)
+        session_data['error'] = mensagem_amigavel
+        traceback.print_exc()  # Apenas no log do servidor
+        # Garantir que os scrapers sejam fechados mesmo em caso de erro
+        try:
+            scraper_service.fechar_scrapers()
+        except:
+            pass
 
 @bp.route('/processos/scraper', methods=['POST'])
 def iniciar_scraping():
@@ -15,17 +116,26 @@ def iniciar_scraping():
         return jsonify({'error': 'Nenhum processo fornecido'}), 400
     
     try:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        resultados = loop.run_until_complete(
-            scraper_service.processar_lote(processos)
+        session_id = str(uuid.uuid4())
+        session_data = {
+            'status': 'starting',
+            'resultados_parciais': {},
+            'resultados': None,
+            'aborted': False
+        }
+        scraping_sessions[session_id] = session_data
+        
+        # Iniciar processamento em thread separada
+        thread = threading.Thread(
+            target=processar_scraping_async,
+            args=(session_id, processos),
+            daemon=True
         )
-        loop.close()
+        thread.start()
         
         return jsonify({
             'success': True,
-            'resultados': resultados,
-            'total_processados': len(resultados)
+            'session_id': session_id
         })
     except Exception as e:
         error_trace = traceback.format_exc()
@@ -35,6 +145,48 @@ def iniciar_scraping():
             'error': 'Erro ao processar scraping. Tente novamente.'
         }), 500
 
+@bp.route('/processos/status/<session_id>', methods=['GET'])
+def status_processos(session_id):
+    if session_id not in scraping_sessions:
+        # Retornar status de erro ao invés de 404 para evitar polling infinito
+        return jsonify({
+            'status': 'error',
+            'error': 'Sessão não encontrada ou expirada. O servidor pode ter reiniciado.',
+            'resultados_parciais': []
+        }), 200  # Retornar 200 para que o frontend possa tratar
+    
+    session_data = scraping_sessions[session_id]
+    
+    response = {
+        'status': session_data['status'],
+        'resultados_parciais': list(session_data.get('resultados_parciais', {}).values())
+    }
+    
+    if session_data['status'] == 'completed':
+        response['resultados'] = session_data.get('resultados', [])
+    elif session_data['status'] == 'error':
+        response['error'] = session_data.get('error', 'Erro desconhecido')
+    
+    return jsonify(response)
+
+@bp.route('/processos/abort/<session_id>', methods=['POST'])
+def abortar_scraping(session_id):
+    if session_id not in scraping_sessions:
+        return jsonify({'error': 'Sessão não encontrada'}), 404
+    
+    session_data = scraping_sessions[session_id]
+    
+    if session_data['status'] in ['completed', 'aborted']:
+        return jsonify({'error': 'Sessão já finalizada'}), 400
+    
+    session_data['aborted'] = True
+    session_data['status'] = 'aborting'
+    
+    return jsonify({
+        'success': True,
+        'message': 'Scraping será abortado'
+    })
+
 @bp.route('/processos/status', methods=['GET'])
-def status_processos():
+def status_geral():
     return jsonify({'status': 'ok'})

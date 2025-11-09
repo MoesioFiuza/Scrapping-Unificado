@@ -63,3 +63,23 @@ def upload_file():
             return jsonify({'error': f'Erro ao processar arquivo: {str(e)}'}), 500
     
     return jsonify({'error': 'Tipo de arquivo não permitido'}), 400
+
+@bp.route('/tribunais', methods=['GET'])
+def get_tribunais():
+    from config.tribunais import TRIBUNAIS_MAP
+    
+    tribunais = [
+        {
+            'codigo': codigo,
+            'nome': info['nome'],
+            'ramo_justica': info.get('ramo_justica', ''),
+            'tribunal_cnj': info.get('tribunal_cnj', '')
+        }
+        for codigo, info in TRIBUNAIS_MAP.items()
+    ]
+    
+    return jsonify({
+        'success': True,
+        'tribunais': tribunais,
+        'total': len(tribunais)
+    })
