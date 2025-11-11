@@ -171,6 +171,14 @@ function mostrarProcessos(processos) {
         ${pendente > 0 ? `<span class="stat-item pending">⏸ ${pendente} pendentes</span>` : ''}
     `;
     
+    // Mostrar seção de resultados se houver processos processados
+    const resultadosSection = document.getElementById('resultadosSection');
+    if (resultadosSection && processos.some(p => p.status === 'sucesso' || p.status === 'erro')) {
+        resultadosSection.style.display = 'block';
+        // Garantir que os event listeners estejam anexados
+        anexarEventListenersExportacao();
+    }
+    
     list.innerHTML = processos.map((p, index) => {
         const statusIcon = p.status === 'sucesso' ? '✓' : 
                           p.status === 'erro' ? '✗' : 
@@ -217,6 +225,13 @@ function atualizarProcesso(numeroProcesso, resultado) {
             ...resultado
         };
         mostrarProcessos(processosData);
+        
+        // Garantir que a seção de resultados apareça quando houver processos processados
+        const resultadosSection = document.getElementById('resultadosSection');
+        if (resultadosSection && processosData.some(p => p.status === 'sucesso' || p.status === 'erro')) {
+            resultadosSection.style.display = 'block';
+            anexarEventListenersExportacao();
+        }
     }
 }
 
@@ -331,11 +346,6 @@ function limparEstadoScraping() {
 
 document.getElementById('actionButton')?.addEventListener('click', async () => {
     const button = document.getElementById('actionButton');
-    
-    if (button.classList.contains('btn-success')) {
-        exportarResultados();
-        return;
-    }
     
     if (isScraping) {
         return;
@@ -485,19 +495,19 @@ function finalizarScraping() {
         return;
     }
     
-    // Mudar botão para exportar
+    // Resetar botão para estado inicial
     const icon = button.querySelector('.action-icon');
     const text = button.querySelector('.action-text');
     const loaderText = button.querySelector('.loader-text');
     
     if (icon) {
-        icon.innerHTML = '<path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>';
+        icon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"></polygon>';
     }
     if (text) {
-        text.textContent = 'Exportar para Excel';
+        text.textContent = 'Iniciar Scraping';
     }
     if (loaderText) {
-        loaderText.textContent = 'Exportando...';
+        loaderText.textContent = 'Processando...';
     }
     
     button.disabled = false;
@@ -507,11 +517,19 @@ function finalizarScraping() {
     if (btnContent) btnContent.style.display = 'flex';
     if (btnLoader) btnLoader.style.display = 'none';
     
-    button.classList.remove('btn-primary');
-    button.classList.add('btn-success');
+    button.classList.remove('btn-success');
+    button.classList.add('btn-primary');
     
     if (abortButton) {
         abortButton.style.cssText = 'display: none !important;';
+    }
+    
+    // Mostrar seção de resultados
+    const resultadosSection = document.getElementById('resultadosSection');
+    if (resultadosSection && processosData.some(p => p.status === 'sucesso' || p.status === 'erro')) {
+        resultadosSection.style.display = 'block';
+        resultadosSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        anexarEventListenersExportacao();
     }
     
     button.offsetHeight;
@@ -577,13 +595,41 @@ document.getElementById('abortarScraping')?.addEventListener('click', async () =
     }
 });
 
-function exportarResultados() {
-    const button = document.getElementById('actionButton');
+// Função para anexar event listeners de exportação
+function anexarEventListenersExportacao() {
+    const exportarRaspadoBtn = document.getElementById('exportarRaspado');
+    const exportarTratadoBtn = document.getElementById('exportarTratado');
+    
+    if (exportarRaspadoBtn && !exportarRaspadoBtn.hasAttribute('data-listener-attached')) {
+        exportarRaspadoBtn.addEventListener('click', exportarRaspado);
+        exportarRaspadoBtn.setAttribute('data-listener-attached', 'true');
+        console.log('Event listener adicionado ao botão exportarRaspado');
+    }
+    
+    if (exportarTratadoBtn && !exportarTratadoBtn.hasAttribute('data-listener-attached')) {
+        exportarTratadoBtn.addEventListener('click', exportarTratado);
+        exportarTratadoBtn.setAttribute('data-listener-attached', 'true');
+        console.log('Event listener adicionado ao botão exportarTratado');
+    }
+}
+
+// Exportar planilha raspada
+function exportarRaspado() {
+    console.log('Exportar raspado chamado');
+    const button = document.getElementById('exportarRaspado');
+    
+    if (!button) {
+        console.error('Botão exportarRaspado não encontrado!');
+        showToast('Erro: Botão não encontrado', 'error');
+        return;
+    }
+    
     button.disabled = true;
     button.querySelector('.btn-content').style.display = 'none';
     button.querySelector('.btn-loader').style.display = 'flex';
     
     const resultados = processosData.filter(p => p.status === 'sucesso' || p.status === 'erro');
+    console.log('Resultados para exportar:', resultados.length);
     
     if (resultados.length === 0) {
         showToast('Nenhum resultado para exportar', 'error');
@@ -609,12 +655,84 @@ function exportarResultados() {
                     const url = window.URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = `resultados_${new Date().getTime()}.xlsx`;
+                    a.download = `resultados_raspados_${new Date().getTime()}.xlsx`;
                     document.body.appendChild(a);
                     a.click();
                     window.URL.revokeObjectURL(url);
                     document.body.removeChild(a);
-                    showToast('Arquivo exportado com sucesso!', 'success');
+                    showToast('Planilha raspada exportada com sucesso!', 'success');
+                });
+            } else {
+                return response.json().then(data => {
+                    if (data.error) {
+                        showToast('Erro ao exportar: ' + data.error, 'error');
+                    }
+                });
+            }
+        } else {
+            return response.json().then(errorData => {
+                showToast('Erro ao exportar: ' + (errorData.error || 'Erro desconhecido'), 'error');
+            });
+        }
+    })
+    .catch(error => {
+        showToast('Erro ao exportar: ' + error.message, 'error');
+    })
+    .finally(() => {
+        button.disabled = false;
+        button.querySelector('.btn-content').style.display = 'flex';
+        button.querySelector('.btn-loader').style.display = 'none';
+    });
+}
+
+// Exportar planilha tratada
+function exportarTratado() {
+    console.log('Exportar tratado chamado');
+    const button = document.getElementById('exportarTratado');
+    
+    if (!button) {
+        console.error('Botão exportarTratado não encontrado!');
+        showToast('Erro: Botão não encontrado', 'error');
+        return;
+    }
+    
+    button.disabled = true;
+    button.querySelector('.btn-content').style.display = 'none';
+    button.querySelector('.btn-loader').style.display = 'flex';
+    
+    const resultados = processosData.filter(p => p.status === 'sucesso' || p.status === 'erro');
+    console.log('Resultados para exportar:', resultados.length);
+    
+    if (resultados.length === 0) {
+        showToast('Nenhum resultado para exportar', 'error');
+        button.disabled = false;
+        button.querySelector('.btn-content').style.display = 'flex';
+        button.querySelector('.btn-loader').style.display = 'none';
+        return;
+    }
+    
+    fetch('/api/resultados/exportar-tratado', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ resultados: resultados })
+    })
+    .then(response => {
+        const contentType = response.headers.get('content-type');
+        
+        if (response.ok) {
+            if (contentType && contentType.includes('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')) {
+                return response.blob().then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `resultados_tratados_${new Date().getTime()}.xlsx`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    showToast('Planilha tratada exportada com sucesso!', 'success');
                 });
             } else {
                 return response.json().then(data => {
@@ -641,7 +759,18 @@ function exportarResultados() {
 
 document.addEventListener('DOMContentLoaded', () => {
     carregarTribunais();
-    loadScrapingState(); 
+    loadScrapingState();
+    
+    // Event listeners para exportação
+    setTimeout(() => {
+        anexarEventListenersExportacao();
+    }, 100);
+    
+    // Mostrar seção de resultados se houver processos processados
+    const resultadosSection = document.getElementById('resultadosSection');
+    if (resultadosSection && processosData.some(p => p.status === 'sucesso' || p.status === 'erro')) {
+        resultadosSection.style.display = 'block';
+    }
 });
 
 document.addEventListener('DOMContentLoaded', () => {

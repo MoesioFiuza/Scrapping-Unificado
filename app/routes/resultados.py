@@ -4,6 +4,7 @@ import os
 from datetime import datetime
 import traceback
 from pathlib import Path
+from app.services.transformador_dados import TransformadorDados
 
 bp = Blueprint('resultados', __name__, url_prefix='/api')
 
@@ -30,17 +31,25 @@ def exportar_resultados():
                     if mov.get('movimento') or mov.get('descricao')
                 ])
                 
+                # Limpar textos para remover espaços extras
+                def limpar_texto(texto):
+                    if not texto:
+                        return ""
+                    import re
+                    texto = re.sub(r'\s+', ' ', str(texto))
+                    return texto.strip()
+                
                 dados_export.append({
-                    'Numero Processo': resultado.get('numero_processo', ''),
-                    'Tribunal': resultado.get('tribunal', ''),
-                    'Data Distribuicao': dados_processo.get('data_distribuicao', ''),
-                    'Classe Judicial': dados_processo.get('classe_judicial', ''),
-                    'Assunto': dados_processo.get('assunto', ''),
-                    'Jurisdicao': dados_processo.get('jurisdicao', ''),
-                    'Orgao Julgador': dados_processo.get('orgao_julgador', ''),
-                    'Polo Ativo': '; '.join([p.get('nome', '') for p in polo_ativo]),
-                    'Polo Passivo': '; '.join([p.get('nome', '') for p in polo_passivo]),
-                    'Movimentacoes': texto_movimentacoes,
+                    'Numero Processo': limpar_texto(resultado.get('numero_processo', '')),
+                    'Tribunal': limpar_texto(resultado.get('tribunal', '')),
+                    'Data Distribuicao': limpar_texto(dados_processo.get('data_distribuicao', '')),
+                    'Classe Judicial': limpar_texto(dados_processo.get('classe_judicial', '')),
+                    'Assunto': limpar_texto(dados_processo.get('assunto', '')),
+                    'Jurisdicao': limpar_texto(dados_processo.get('jurisdicao', '')),
+                    'Orgao Julgador': limpar_texto(dados_processo.get('orgao_julgador', '')),
+                    'Polo Ativo': '; '.join([limpar_texto(p.get('nome', '')) for p in polo_ativo]),
+                    'Polo Passivo': '; '.join([limpar_texto(p.get('nome', '')) for p in polo_passivo]),
+                    'Movimentacoes': limpar_texto(texto_movimentacoes),
                     'Total Movimentacoes': len(movimentacoes),
                     'Total Documentos': len(dados.get('documentos', []))
                 })
@@ -51,7 +60,7 @@ def exportar_resultados():
         downloads_path = Path.home() / 'Downloads'
         downloads_path.mkdir(exist_ok=True)
         
-        filename = f"resultados_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        filename = f"resultados_raspados_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
         filepath = downloads_path / filename
         with pd.ExcelWriter(str(filepath), engine='openpyxl') as writer:
             df.to_excel(writer, index=False, sheet_name='Resultados')
@@ -84,3 +93,94 @@ def exportar_resultados():
         error_trace = traceback.format_exc()
         print(f"Erro ao exportar resultados: {error_trace}")
         return jsonify({'error': f'Erro ao exportar resultados: {str(e)}'}), 500
+
+@bp.route('/resultados/exportar-tratado', methods=['POST'])
+def exportar_resultados_tratados():
+    """Exporta planilha com dados tratados (formato completo mapeado)"""
+    data = request.get_json()
+    resultados = data.get('resultados', [])
+    
+    if not resultados:
+        return jsonify({'error': 'Nenhum resultado para exportar'}), 400
+    
+    try:
+        # Transformar dados
+        dados_transformados = TransformadorDados.transformar_lote(resultados)
+        
+        if not dados_transformados:
+            return jsonify({'error': 'Nenhum resultado válido para transformar'}), 400
+        
+        # Criar DataFrame
+        df = pd.DataFrame(dados_transformados)
+        
+        # Ordenar colunas conforme o mapeamento
+        colunas_ordenadas = [
+            'pasta', 'numeroProcessoAnterior', 'cnj', 'tipoPartePoloAtivo', 'partePoloAtivo',
+            'tipoPartePoloPassivo', 'partePoloPassivo', 'cliente', 'tipoDeRito', 'dataDistribuicao',
+            'numeroUnidade', 'unidade', 'especialidade', 'comarca', 'estado', 'orgao', 'natureza',
+            'materia', 'dataInstancia', 'tipoInstancia', 'sistemaExterno', 'processoEletronico',
+            'processoEstrategico', 'valorCausa', 'valorFinalCausa', 'tipoAcao', 'tipoObjeto',
+            'dataFase', 'fase', 'dataStatus', 'status', 'grupoProcesso', 'prioridadeDe',
+            'data_resultado', 'tipo_resultado', 'descricao_resultado', 'dataEvento', 'tipoEvento',
+            'descricaoEvento', 'complementoEvento', 'observacaoEvento', 'solicitanteEvento',
+            'responsavelEvento', 'grupoTrabalho', 'corresponsavel', 'dataNotificacao',
+            'dataNotificacaoAdicional', 'probabilidadePerda', 'dataValorProvisionado',
+            'valorProvisionado', 'dataAndamento', 'tipoAndamento', 'descricaoAndamento',
+            'complementoAndamento', 'solicitanteAndamento', 'responsavelAndamento',
+            'corresponsavelAndamento', 'descricaoObjeto', 'escritorioCredenciado',
+            'dataContratacao', 'observacaoDoProcesso', 'parecerDoProcesso'
+        ]
+        
+        # Reordenar colunas (manter apenas as que existem)
+        colunas_existentes = [col for col in colunas_ordenadas if col in df.columns]
+        df = df[colunas_existentes]
+        
+        downloads_path = Path.home() / 'Downloads'
+        downloads_path.mkdir(exist_ok=True)
+        
+        filename = f"resultados_tratados_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        filepath = downloads_path / filename
+        
+        with pd.ExcelWriter(str(filepath), engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name='Processos')
+            worksheet = writer.sheets['Processos']
+            
+            # Ajustar larguras das colunas
+            from openpyxl.utils import get_column_letter
+            from openpyxl.styles import Alignment
+            
+            # Colunas que não devem ter quebra de linha (valores simples)
+            colunas_sem_quebra = ['cnj', 'numeroProcessoAnterior', 'tipoPartePoloAtivo', 'tipoPartePoloPassivo', 
+                                 'tipoDeRito', 'dataDistribuicao', 'numeroUnidade', 'especialidade', 'comarca', 
+                                 'estado', 'natureza', 'materia', 'tipoInstancia', 'processoEletronico', 
+                                 'processoEstrategico', 'tipoAcao', 'dataStatus', 'status', 'tipoEvento']
+            
+            for idx, col in enumerate(df.columns, 1):
+                col_letter = get_column_letter(idx)
+                # Ajustar largura específica para algumas colunas
+                if col == 'cnj':
+                    worksheet.column_dimensions[col_letter].width = 25  # Número do processo mais largo
+                elif col in ['partePoloAtivo', 'partePoloPassivo', 'descricaoEvento', 'descricaoAndamento']:
+                    worksheet.column_dimensions[col_letter].width = 40  # Colunas de texto mais largas
+                else:
+                    worksheet.column_dimensions[col_letter].width = 20
+            
+            # Aplicar alinhamento
+            for row in worksheet.iter_rows(min_row=2, max_row=worksheet.max_row):
+                for idx, cell in enumerate(row, 1):
+                    col_name = df.columns[idx - 1] if idx <= len(df.columns) else ''
+                    # Desabilitar quebra de linha para colunas específicas
+                    wrap_text = col_name not in colunas_sem_quebra
+                    cell.alignment = Alignment(wrap_text=wrap_text, vertical='top')
+        
+        return send_file(
+            str(filepath), 
+            as_attachment=True, 
+            download_name=filename,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        print(f"Erro ao exportar resultados tratados: {error_trace}")
+        return jsonify({'error': f'Erro ao exportar resultados tratados: {str(e)}'}), 500

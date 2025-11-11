@@ -164,6 +164,57 @@
                         <div id="processosList" class="processos-grid"></div>
                     </div>
                 </section>
+                
+                <!-- Resultados Section -->
+                <section class="card resultados-section" id="resultadosSection" style="display: none;">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2>Resultados do Scraping</h2>
+                            <p class="card-description">Exporte os dados raspados ou tratados</p>
+                        </div>
+                    </div>
+                    
+                    <div class="export-buttons">
+                        <button id="exportarRaspado" class="btn btn-primary btn-large">
+                            <span class="btn-content">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                <span>Exportar Planilha Raspada</span>
+                            </span>
+                            <span class="btn-loader" style="display: none;">
+                                <span class="spinner"></span>
+                                <span>Exportando...</span>
+                            </span>
+                        </button>
+                        
+                        <button id="exportarTratado" class="btn btn-success btn-large">
+                            <span class="btn-content">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                </svg>
+                                <span>Exportar Planilha Tratada</span>
+                            </span>
+                            <span class="btn-loader" style="display: none;">
+                                <span class="spinner"></span>
+                                <span>Exportando...</span>
+                            </span>
+                        </button>
+                    </div>
+                </section>
             </main>
         </div>
     </div>
