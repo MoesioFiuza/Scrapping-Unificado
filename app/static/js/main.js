@@ -443,6 +443,12 @@ function startPolling() {
                         atualizarProcesso(resultado.numero_processo, resultado);
                     });
                 }
+                // Garantir que a seção de resultados e os listeners estejam ativos antes de finalizar
+                const resultadosSection = document.getElementById('resultadosSection');
+                if (resultadosSection) {
+                    resultadosSection.style.display = 'block';
+                    anexarEventListenersExportacao();
+                }
                 finalizarScraping();
                 showToast('Raspagem concluída com sucesso!', 'success');
             } else if (data.status === 'aborted') {
@@ -485,53 +491,49 @@ function stopPolling() {
 function finalizarScraping() {
     isScraping = false;
     scrapingSessionId = null;
-    limparEstadoScraping();
-    
+
     const button = document.getElementById('actionButton');
     const abortButton = document.getElementById('abortarScraping');
-    
+
     if (!button) {
         console.error('Botão actionButton não encontrado!');
         return;
     }
-    
+
     // Resetar botão para estado inicial
     const icon = button.querySelector('.action-icon');
     const text = button.querySelector('.action-text');
     const loaderText = button.querySelector('.loader-text');
-    
-    if (icon) {
-        icon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"></polygon>';
-    }
-    if (text) {
-        text.textContent = 'Iniciar Scraping';
-    }
-    if (loaderText) {
-        loaderText.textContent = 'Processando...';
-    }
-    
+
+    if (icon) icon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"></polygon>';
+    if (text) text.textContent = 'Iniciar Scraping';
+    if (loaderText) loaderText.textContent = 'Processando...';
+
     button.disabled = false;
     const btnContent = button.querySelector('.btn-content');
     const btnLoader = button.querySelector('.btn-loader');
-    
+
     if (btnContent) btnContent.style.display = 'flex';
     if (btnLoader) btnLoader.style.display = 'none';
-    
+
     button.classList.remove('btn-success');
     button.classList.add('btn-primary');
-    
+
     if (abortButton) {
         abortButton.style.cssText = 'display: none !important;';
     }
-    
-    // Mostrar seção de resultados
+
+    // SEMPRE exibir a seção de resultados e anexar os listeners de exportação
     const resultadosSection = document.getElementById('resultadosSection');
-    if (resultadosSection && processosData.some(p => p.status === 'sucesso' || p.status === 'erro')) {
+    if (resultadosSection) {
         resultadosSection.style.display = 'block';
         resultadosSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         anexarEventListenersExportacao();
     }
-    
+
+    // limpar storage somente no fim (para não perder o estado antes de renderizar os botões)
+    limparEstadoScraping();
+
     button.offsetHeight;
 }
 
