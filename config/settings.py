@@ -23,7 +23,7 @@ CHROME_DRIVER_PATH = get_chromedriver_path()
 CHROME_USER_DATA_DIR = os.getenv('CHROME_USER_DATA_DIR') or None
 CHROME_PROFILE_DIRECTORY = os.getenv('CHROME_PROFILE_DIRECTORY', 'Default')
 
-HEADLESS_MODE = os.getenv('HEADLESS_MODE', 'True').lower() == 'true'
+HEADLESS_MODE = os.getenv('HEADLESS_MODE', 'True').lower() == 'true'  
 
 MAX_PROCESSOS_POR_SESSAO = int(os.getenv('MAX_PROCESSOS_POR_SESSAO', '1000'))
 DELAY_ENTRE_PROCESSOS = float(os.getenv('DELAY_ENTRE_PROCESSOS', '0.5'))

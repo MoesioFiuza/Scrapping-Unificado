@@ -37,6 +37,33 @@ TRIBUNAIS_MAP = {
         "ramo_justica": "8",
         "tribunal_cnj": "17",
     },
+    "8.10": {
+        "nome": "TJMA",
+        "url_login": "https://pje.tjma.jus.br/pje/ConsultaPublica/listView.seam",
+        "url_consulta": "https://pje.tjma.jus.br/pje/ConsultaPublica/listView.seam",
+        "modulo_scraper": "scrapers.tjma.scraper",
+        "classe_scraper": "PJeScraperTJMA",
+        "ramo_justica": "8",
+        "tribunal_cnj": "10",
+    },
+    "8.07": {
+        "nome": "TJDFT",
+        "url_login": "https://pje-consultapublica.tjdft.jus.br/consultapublica/ConsultaPublica/listView.seam",
+        "url_consulta": "https://pje-consultapublica.tjdft.jus.br/consultapublica/ConsultaPublica/listView.seam",
+        "modulo_scraper": "scrapers.tjdft.scraper",
+        "classe_scraper": "PJeScraperTJDFT",
+        "ramo_justica": "8",
+        "tribunal_cnj": "07",
+    },
+    ##"8.20": {
+    ##    "nome": "TJRN",
+    ##    "url_login": "https://pje1gconsulta.tjrn.jus.br/consultapublica/ConsultaPublica/listView.seam",
+    ##    "url_consulta": "https://pje1gconsulta.tjrn.jus.br/consultapublica/ConsultaPublica/listView.seam",
+    ##    "modulo_scraper": "scrapers.tjrn.scraper",
+    ##    "classe_scraper": "PJeScraperTJRN",
+    ##    "ramo_justica": "8",
+    ##    "tribunal_cnj": "20",
+    ##},
 }
 
 def identificar_tribunal_por_processo(numero_processo):

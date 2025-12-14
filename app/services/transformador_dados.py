@@ -12,6 +12,9 @@ class TransformadorDados:
         "8.13": "MG",  # TJMG
         "8.17": "PE",  # TJPE
         "8.26": "SP",  # TJSP
+        "8.10": "MA",  # TJMA
+        "8.07": "DF",  # TJDFT
+        "8.20": "RN",  # TJRN
     }
     
     # Mapeamento de tribunais para nomes
@@ -21,6 +24,9 @@ class TransformadorDados:
         "8.13": "TJMG",
         "8.17": "TJPE",
         "8.26": "TJSP",
+        "8.10": "TJMA",
+        "8.07": "TJDFT",
+        "8.20": "TJRN",
     }
     
     @staticmethod
