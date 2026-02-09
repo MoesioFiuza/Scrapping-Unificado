@@ -55,6 +55,15 @@ TRIBUNAIS_MAP = {
         "ramo_justica": "8",
         "tribunal_cnj": "07",
     },
+    "8.26": {
+    "nome": "eSAJ SP",
+    "url_login": "https://esaj.tjsp.jus.br/cpopg/open.do",
+    "url_consulta": "https://esaj.tjsp.jus.br/cpopg/open.do",
+    "modulo_scraper": "scrapers.tjsp.scraper",
+    "classe_scraper": "ESAJScraperTJSP",
+    "ramo_justica": "8",
+    "tribunal_cnj": "26",
+    },
     ##"8.20": {
     ##    "nome": "TJRN",
     ##    "url_login": "https://pje1gconsulta.tjrn.jus.br/consultapublica/ConsultaPublica/listView.seam",

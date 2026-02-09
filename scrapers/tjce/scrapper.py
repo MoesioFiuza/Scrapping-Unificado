@@ -54,13 +54,11 @@ class PJeScraperTJCE(BaseScraper):
                 service = Service(CHROME_DRIVER_PATH)
                 self.driver = webdriver.Chrome(service=service, options=chrome_options)
             else:
-                # Usar webdriver-manager como fallback
                 try:
                     from webdriver_manager.chrome import ChromeDriverManager
                     service = Service(ChromeDriverManager().install())
                     self.driver = webdriver.Chrome(service=service, options=chrome_options)
                 except Exception as e:
-                    # Último recurso: deixar Selenium encontrar automaticamente
                     print(f"Aviso: Erro ao usar webdriver-manager: {e}. Tentando sem Service...")
                     self.driver = webdriver.Chrome(options=chrome_options)
             
@@ -77,16 +75,13 @@ class PJeScraperTJCE(BaseScraper):
     def raspar_processo(self, numero_processo: str) -> dict:
         print(f"Iniciando scraping do processo: {numero_processo}")
         
-        # Garantir que o driver está válido
         self.ensure_driver()
         
-        # Guardar a aba principal (primeira aba)
         aba_principal = None
         try:
             aba_principal = self.driver.window_handles[0] if self.driver.window_handles else None
         except Exception as e:
             print(f"Erro ao obter aba principal: {e}")
-            # Se falhar, recriar o driver
             self.ensure_driver()
             aba_principal = self.driver.window_handles[0] if self.driver.window_handles else None
         

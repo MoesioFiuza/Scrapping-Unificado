@@ -1,14 +1,17 @@
-from flask import Blueprint, request, jsonify, send_file
+from flask import Blueprint, request, jsonify, send_file, session
 import pandas as pd
 import os
 from datetime import datetime
 import traceback
 from pathlib import Path
 from app.services.transformador_dados import TransformadorDados
+from app.services.extracoes_service import ExtracoesService
+from app.utils.auth_decorator import login_required
 
 bp = Blueprint('resultados', __name__, url_prefix='/api')
 
 @bp.route('/resultados/exportar', methods=['POST'])
+@login_required
 def exportar_resultados():
     data = request.get_json()
     resultados = data.get('resultados', [])
@@ -31,7 +34,6 @@ def exportar_resultados():
                     if mov.get('movimento') or mov.get('descricao')
                 ])
                 
-                # Limpar textos para remover espaços extras
                 def limpar_texto(texto):
                     if not texto:
                         return ""
@@ -57,12 +59,19 @@ def exportar_resultados():
         if not dados_export:
             return jsonify({'error': 'Nenhum resultado com sucesso para exportar'}), 400
         df = pd.DataFrame(dados_export)
+        
+        username = session.get('username', '')
         downloads_path = Path.home() / 'Downloads'
         downloads_path.mkdir(exist_ok=True)
         
-        filename = f"resultados_raspados_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-        filepath = downloads_path / filename
-        with pd.ExcelWriter(str(filepath), engine='openpyxl') as writer:
+        output_dir = Path('data/output')
+        output_dir.mkdir(parents=True, exist_ok=True)
+        
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"resultados_raspados_{timestamp}.xlsx"
+        
+        downloads_filepath = downloads_path / filename
+        with pd.ExcelWriter(str(downloads_filepath), engine='openpyxl') as writer:
             df.to_excel(writer, index=False, sheet_name='Resultados')
             worksheet = writer.sheets['Resultados']
             worksheet.column_dimensions['A'].width = 20  # Numero Processo
@@ -82,8 +91,37 @@ def exportar_resultados():
                 for cell in row:
                     cell.alignment = Alignment(wrap_text=True, vertical='top')
         
+        output_filepath = output_dir / filename
+        with pd.ExcelWriter(str(output_filepath), engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name='Resultados')
+            worksheet = writer.sheets['Resultados']
+            worksheet.column_dimensions['A'].width = 20
+            worksheet.column_dimensions['B'].width = 15
+            worksheet.column_dimensions['C'].width = 15
+            worksheet.column_dimensions['D'].width = 40
+            worksheet.column_dimensions['E'].width = 50
+            worksheet.column_dimensions['F'].width = 30
+            worksheet.column_dimensions['G'].width = 40
+            worksheet.column_dimensions['H'].width = 40
+            worksheet.column_dimensions['I'].width = 40
+            worksheet.column_dimensions['J'].width = 80
+            worksheet.column_dimensions['K'].width = 15
+            worksheet.column_dimensions['L'].width = 15
+            from openpyxl.styles import Alignment
+            for row in worksheet.iter_rows(min_row=2, max_row=worksheet.max_row):
+                for cell in row:
+                    cell.alignment = Alignment(wrap_text=True, vertical='top')
+        
+        total_processos = len(dados_export)
+        ExtracoesService.registrar_extracao(
+            username=username,
+            filename=filename,
+            tipo='raspado',
+            total_processos=total_processos
+        )
+        
         return send_file(
-            str(filepath), 
+            str(downloads_filepath), 
             as_attachment=True, 
             download_name=filename,
             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -95,8 +133,8 @@ def exportar_resultados():
         return jsonify({'error': f'Erro ao exportar resultados: {str(e)}'}), 500
 
 @bp.route('/resultados/exportar-tratado', methods=['POST'])
+@login_required
 def exportar_resultados_tratados():
-    """Exporta planilha com dados tratados (formato completo mapeado)"""
     data = request.get_json()
     resultados = data.get('resultados', [])
     
@@ -104,16 +142,13 @@ def exportar_resultados_tratados():
         return jsonify({'error': 'Nenhum resultado para exportar'}), 400
     
     try:
-        # Transformar dados
         dados_transformados = TransformadorDados.transformar_lote(resultados)
         
         if not dados_transformados:
             return jsonify({'error': 'Nenhum resultado válido para transformar'}), 400
         
-        # Criar DataFrame
         df = pd.DataFrame(dados_transformados)
         
-        # Ordenar colunas conforme o mapeamento
         colunas_ordenadas = [
             'pasta', 'numeroProcessoAnterior', 'cnj', 'tipoPartePoloAtivo', 'partePoloAtivo',
             'tipoPartePoloPassivo', 'partePoloPassivo', 'cliente', 'tipoDeRito', 'dataDistribuicao',
@@ -131,25 +166,28 @@ def exportar_resultados_tratados():
             'dataContratacao', 'observacaoDoProcesso', 'parecerDoProcesso'
         ]
         
-        # Reordenar colunas (manter apenas as que existem)
         colunas_existentes = [col for col in colunas_ordenadas if col in df.columns]
         df = df[colunas_existentes]
         
+        username = session.get('username', '')
         downloads_path = Path.home() / 'Downloads'
         downloads_path.mkdir(exist_ok=True)
         
-        filename = f"resultados_tratados_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-        filepath = downloads_path / filename
+        output_dir = Path('data/output')
+        output_dir.mkdir(parents=True, exist_ok=True)
         
-        with pd.ExcelWriter(str(filepath), engine='openpyxl') as writer:
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"resultados_tratados_{timestamp}.xlsx"
+        
+        downloads_filepath = downloads_path / filename
+        
+        with pd.ExcelWriter(str(downloads_filepath), engine='openpyxl') as writer:
             df.to_excel(writer, index=False, sheet_name='Processos')
             worksheet = writer.sheets['Processos']
             
-            # Ajustar larguras das colunas
             from openpyxl.utils import get_column_letter
             from openpyxl.styles import Alignment
             
-            # Colunas que não devem ter quebra de linha (valores simples)
             colunas_sem_quebra = ['cnj', 'numeroProcessoAnterior', 'tipoPartePoloAtivo', 'tipoPartePoloPassivo', 
                                  'tipoDeRito', 'dataDistribuicao', 'numeroUnidade', 'especialidade', 'comarca', 
                                  'estado', 'natureza', 'materia', 'tipoInstancia', 'processoEletronico', 
@@ -157,7 +195,6 @@ def exportar_resultados_tratados():
             
             for idx, col in enumerate(df.columns, 1):
                 col_letter = get_column_letter(idx)
-                # Ajustar largura específica para algumas colunas
                 if col == 'cnj':
                     worksheet.column_dimensions[col_letter].width = 25  # Número do processo mais largo
                 elif col in ['partePoloAtivo', 'partePoloPassivo', 'descricaoEvento', 'descricaoAndamento']:
@@ -165,16 +202,50 @@ def exportar_resultados_tratados():
                 else:
                     worksheet.column_dimensions[col_letter].width = 20
             
-            # Aplicar alinhamento
             for row in worksheet.iter_rows(min_row=2, max_row=worksheet.max_row):
                 for idx, cell in enumerate(row, 1):
                     col_name = df.columns[idx - 1] if idx <= len(df.columns) else ''
-                    # Desabilitar quebra de linha para colunas específicas
                     wrap_text = col_name not in colunas_sem_quebra
                     cell.alignment = Alignment(wrap_text=wrap_text, vertical='top')
         
+        output_filepath = output_dir / filename
+        with pd.ExcelWriter(str(output_filepath), engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name='Processos')
+            worksheet = writer.sheets['Processos']
+            
+            from openpyxl.utils import get_column_letter
+            from openpyxl.styles import Alignment
+            
+            colunas_sem_quebra = ['cnj', 'numeroProcessoAnterior', 'tipoPartePoloAtivo', 'tipoPartePoloPassivo', 
+                                 'tipoDeRito', 'dataDistribuicao', 'numeroUnidade', 'especialidade', 'comarca', 
+                                 'estado', 'natureza', 'materia', 'tipoInstancia', 'processoEletronico', 
+                                 'processoEstrategico', 'tipoAcao', 'dataStatus', 'status', 'tipoEvento']
+            
+            for idx, col in enumerate(df.columns, 1):
+                col_letter = get_column_letter(idx)
+                if col == 'cnj':
+                    worksheet.column_dimensions[col_letter].width = 25
+                elif col in ['partePoloAtivo', 'partePoloPassivo', 'descricaoEvento', 'descricaoAndamento']:
+                    worksheet.column_dimensions[col_letter].width = 40
+                else:
+                    worksheet.column_dimensions[col_letter].width = 20
+            
+            for row in worksheet.iter_rows(min_row=2, max_row=worksheet.max_row):
+                for idx, cell in enumerate(row, 1):
+                    col_name = df.columns[idx - 1] if idx <= len(df.columns) else ''
+                    wrap_text = col_name not in colunas_sem_quebra
+                    cell.alignment = Alignment(wrap_text=wrap_text, vertical='top')
+        
+        total_processos = len(dados_transformados)
+        ExtracoesService.registrar_extracao(
+            username=username,
+            filename=filename,
+            tipo='tratado',
+            total_processos=total_processos
+        )
+        
         return send_file(
-            str(filepath), 
+            str(downloads_filepath), 
             as_attachment=True, 
             download_name=filename,
             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'

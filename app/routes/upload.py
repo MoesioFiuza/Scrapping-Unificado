@@ -3,6 +3,7 @@ import pandas as pd
 import os
 from werkzeug.utils import secure_filename
 from config.tribunais import identificar_tribunal_por_processo
+from app.utils.auth_decorator import login_required
 
 bp = Blueprint('upload', __name__, url_prefix='/api')
 
@@ -12,6 +13,7 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @bp.route('/upload', methods=['POST'])
+@login_required
 def upload_file():
     if 'file' not in request.files:
         return jsonify({'error': 'Nenhum arquivo enviado'}), 400
@@ -65,6 +67,7 @@ def upload_file():
     return jsonify({'error': 'Tipo de arquivo não permitido'}), 400
 
 @bp.route('/tribunais', methods=['GET'])
+@login_required
 def get_tribunais():
     from config.tribunais import TRIBUNAIS_MAP
     

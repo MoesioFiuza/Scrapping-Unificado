@@ -14,7 +14,7 @@ class PJeScraperTJMG(BaseScraper):
     
     def __init__(self, config):
         super().__init__(config)
-        self.url_consulta = config.get('url_consulta', 'https://pjerecursal.tjmg.jus.br/pje/ConsultaPublica/listView.seam')
+        self.url_consulta = config.get('url_consulta', 'https://pje-consulta-publica.tjmg.jus.br/')
         self.headless = config.get('headless', False)
     
     def setup_driver(self):
@@ -168,7 +168,7 @@ class PJeScraperTJMG(BaseScraper):
                                     if url_match:
                                         url_detalhes = url_match.group(1)
                                         if not url_detalhes.startswith('http'):
-                                            url_detalhes = f"https://pjerecursal.tjmg.jus.br{url_detalhes}"
+                                            url_detalhes = f"https://pje-consulta-publica.tjmg.jus.br{url_detalhes}"
                                         self.driver.get(url_detalhes)
                                         print(f"Navegando diretamente para: {url_detalhes}")
                             except Exception as e:

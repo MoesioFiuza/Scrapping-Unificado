@@ -1,0 +1,19 @@
+{
+  "users": [
+    {
+      "username": "moesio.fiuza@valenca.adv.br",
+      "password_hash": "scrypt:32768:8:1$FyE2NpJqZ3tZgWZH$06ba273513aeb147ea14ebc7a45a168bc09fed9ef0d13fcd3b9e5ee8debaa2079e8f82909257b0e694b4c3cf2e57efcd7f42e414df3e6fd97cad6e4c711c1c1a",
+      "role": "admin"
+    },
+    {
+      "username": "m0es10.mf@gmail.com",
+      "password_hash": "scrypt:32768:8:1$rHWwcnexrRZJ1giK$ff023300a0a8feb1eb87dbca90677490d3d5509c4d88597b0cbb6360767208681031bf7689cad2ab9a65b0f38d9e8f742617b64ef9bc077459474f0afd89d6b5",
+      "role": "user"
+    },
+    {
+      "username": "amanda.xelian@valenca.adv.br",
+      "password_hash": "scrypt:32768:8:1$DeV2YLNCgOYMuXXI$2d625dc627ecceec1f2086e3f67d4ae99e0698fe36494646ffa623fc27bfcdc63032710e928a627cedf430715776c85c85799890d0ddbd364e3b10df5b9f60e9",
+      "role": "admin"
+    }
+  ]
+}

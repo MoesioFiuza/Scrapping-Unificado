@@ -21,11 +21,45 @@
                 </div>
                 <p class="subtitle">Sistema Inteligente de Raspagem de Processos Judiciais</p>
             </div>
+            <div class="header-actions">
+                <a id="adminLink" href="/admin" class="btn-admin" style="display: none;" title="Painel Administrativo">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        <path d="M9 12l2 2 4-4"></path>
+                    </svg>
+                    <span>Admin</span>
+                </a>
+                <button id="extracoesBtn" class="btn-extracoes" title="Minhas Extrações">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                    </svg>
+                    <span>Minhas Extrações</span>
+                </button>
+                <button id="scraperBtn" class="btn-scraper active" title="Scraper" style="display: none;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    <span>Scraper</span>
+                </button>
+                <button id="logoutBtn" class="btn-logout" title="Sair">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    <span>Sair</span>
+                </button>
+            </div>
         </header>
         
-        <div class="app-layout">
-            <!-- Sidebar de Tribunais -->
-            <aside class="sidebar" id="sidebar">
+        <!-- Conteúdo Principal (Aba Scraper) -->
+        <div id="scraperTab" class="tab-content active">
+            <div class="app-layout">
+                <!-- Sidebar de Tribunais -->
+                <aside class="sidebar" id="sidebar">
                 <div class="sidebar-header">
                     <div class="sidebar-icon">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -216,6 +250,53 @@
                     </div>
                 </section>
             </main>
+            </div>
+        </div>
+            
+        <!-- Aba Minhas Extrações -->
+        <div id="extracoesTab" class="tab-content">
+            <div class="extracoes-page">
+                <div class="card extracoes-section">
+                        <div class="card-header">
+                            <div class="card-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                </svg>
+                            </div>
+                            <div>
+                                <h2>Minhas Extrações</h2>
+                                <p class="card-description">Visualize e gerencie suas exportações anteriores</p>
+                            </div>
+                        </div>
+                        
+                        <div class="extracoes-controls">
+                            <button id="refreshExtracoes" class="btn btn-secondary">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="23 4 23 10 17 10"></polyline>
+                                    <polyline points="1 20 1 14 7 14"></polyline>
+                                    <path d="M3.51 9a9 9 0 0114.85 3.85L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"></path>
+                                </svg>
+                                <span>Atualizar</span>
+                            </button>
+                        </div>
+                        
+                        <div class="extracoes-header-info">
+                            <div id="extracoesCount" class="extracoes-count"></div>
+                            <div id="extracoesStats" class="extracoes-stats"></div>
+                        </div>
+                        
+                        <div id="extracoesList" class="extracoes-table-container">
+                            <div class="extracoes-loading">
+                                <span class="spinner-small"></span>
+                                <span>Carregando extrações...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     

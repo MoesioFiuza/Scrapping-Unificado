@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from app.services.scraper_service import ScraperService
+from app.utils.auth_decorator import login_required
 import asyncio
 import traceback
 import uuid
@@ -45,9 +46,7 @@ def processar_scraping_async(session_id, processos):
                 if session_data.get('aborted', False):
                     break
                 
-                numero_processo = processo['numero_processo']
-                
-                # Marcar como processando
+                numero_processo = processo['numero_processo']                
                 resultado_temp = {
                     'numero_processo': numero_processo,
                     'tribunal': tribunal_key,
@@ -58,7 +57,6 @@ def processar_scraping_async(session_id, processos):
                 resultados_dict[idx] = resultado_temp
                 session_data['resultados_parciais'][numero_processo] = resultado_temp
                 
-                # Processar
                 resultado = loop.run_until_complete(
                     scraper_service.processar_processo(
                         numero_processo,
@@ -68,7 +66,6 @@ def processar_scraping_async(session_id, processos):
                 resultados_dict[idx] = resultado
                 session_data['resultados_parciais'][numero_processo] = resultado
             
-            # Fechar abas do tribunal após processar todos os processos
             if not session_data.get('aborted', False):
                 scraper_service._fechar_abas_tribunal(tribunal_key)
         
@@ -92,23 +89,21 @@ def processar_scraping_async(session_id, processos):
         else:
             session_data['status'] = 'aborted'
         
-        # Fechar todos os scrapers no final
         scraper_service.fechar_scrapers()
         
         loop.close()
     except Exception as e:
         session_data['status'] = 'error'
-        # Usar mensagem amigável ao invés da trace completa
         mensagem_amigavel = scraper_service._obter_mensagem_amigavel(e)
         session_data['error'] = mensagem_amigavel
-        traceback.print_exc()  # Apenas no log do servidor
-        # Garantir que os scrapers sejam fechados mesmo em caso de erro
+        traceback.print_exc()
         try:
             scraper_service.fechar_scrapers()
         except:
             pass
 
 @bp.route('/processos/scraper', methods=['POST'])
+@login_required
 def iniciar_scraping():
     data = request.get_json()
     processos = data.get('processos', [])
@@ -125,7 +120,6 @@ def iniciar_scraping():
         }
         scraping_sessions[session_id] = session_data
         
-        # Iniciar processamento em thread separada
         thread = threading.Thread(
             target=processar_scraping_async,
             args=(session_id, processos),
@@ -146,14 +140,14 @@ def iniciar_scraping():
         }), 500
 
 @bp.route('/processos/status/<session_id>', methods=['GET'])
+@login_required
 def status_processos(session_id):
     if session_id not in scraping_sessions:
-        # Retornar status de erro ao invés de 404 para evitar polling infinito
         return jsonify({
             'status': 'error',
             'error': 'Sessão não encontrada ou expirada. O servidor pode ter reiniciado.',
             'resultados_parciais': []
-        }), 200  # Retornar 200 para que o frontend possa tratar
+        }), 200
     
     session_data = scraping_sessions[session_id]
     
@@ -170,6 +164,7 @@ def status_processos(session_id):
     return jsonify(response)
 
 @bp.route('/processos/abort/<session_id>', methods=['POST'])
+@login_required
 def abortar_scraping(session_id):
     if session_id not in scraping_sessions:
         return jsonify({'error': 'Sessão não encontrada'}), 404
@@ -188,5 +183,6 @@ def abortar_scraping(session_id):
     })
 
 @bp.route('/processos/status', methods=['GET'])
+@login_required
 def status_geral():
     return jsonify({'status': 'ok'})

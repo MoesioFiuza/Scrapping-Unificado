@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Administrativo - Scraper Unificado</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #0f0f0f 100%);
+            background-size: 200% 200%;
+            background-attachment: fixed;
+            animation: gradientShift 20s ease infinite;
+            padding: 24px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.02) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .admin-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            margin-bottom: 24px;
+            padding: 10px 16px;
+            border-radius: 12px;
+            transition: all 0.3s;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .back-link:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(-4px);
+        }
+
+        .back-link svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .admin-header {
+            background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 24px;
+            padding: 32px 40px;
+            margin-bottom: 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .admin-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #000000 0%, #1a1a1a 50%, #000000 100%);
+            background-size: 200% 100%;
+            animation: shimmer 3s linear infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        .admin-header-content {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .admin-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        .admin-icon svg {
+            width: 28px;
+            height: 28px;
+            color: white;
+        }
+
+        .admin-header h1 {
+            font-size: 32px;
+            font-weight: 800;
+            color: #000000;
+            letter-spacing: -0.02em;
+            margin: 0;
+        }
+
+        .admin-header-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .admin-card {
+            background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .admin-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #000000 0%, #1a1a1a 50%, #000000 100%);
+            background-size: 200% 100%;
+            animation: shimmer 3s linear infinite;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 32px;
+        }
+
+        .card-header-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-header-icon svg {
+            width: 20px;
+            height: 20px;
+            color: white;
+        }
+
+        .admin-card h2 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #000000;
+            letter-spacing: -0.01em;
+            margin: 0;
+        }
+
+        .add-user-form {
+            display: grid;
+            grid-template-columns: 2fr 1.5fr 1.2fr auto;
+            gap: 16px;
+            align-items: end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .form-group label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1a1a;
+            letter-spacing: -0.01em;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 14px 18px;
+            border: 2px solid #e5e5e5;
+            border-radius: 12px;
+            font-size: 15px;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s;
+            background: #ffffff;
+            color: #1a1a1a;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #000000;
+            box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-add {
+            padding: 14px 28px;
+            background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            white-space: nowrap;
+        }
+
+        .btn-add:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+        }
+
+        .btn-add:active {
+            transform: translateY(0);
+        }
+
+        .users-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: grid;
+            gap: 16px;
+        }
+
+        .user-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border: 2px solid #e5e5e5;
+            border-radius: 16px;
+            background: #ffffff;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .user-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(180deg, #000000 0%, #1a1a1a 100%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .user-item:hover {
+            border-color: #000000;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+
+        .user-item:hover::before {
+            opacity: 1;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex: 1;
+        }
+
+        .user-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .user-details {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+        }
+
+        .user-username {
+            font-weight: 700;
+            color: #000000;
+            font-size: 16px;
+            letter-spacing: -0.01em;
+        }
+
+        .user-role-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            width: fit-content;
+        }
+
+        .user-role-badge.admin {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            color: #92400e;
+        }
+
+        .user-role-badge.user {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            color: #1e40af;
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn-action {
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .btn-action svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .btn-role {
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-role:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+        }
+
+        .message {
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            display: none;
+            font-size: 14px;
+            font-weight: 500;
+            animation: slideDown 0.3s ease;
+            border: 1px solid;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.success {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            color: #065f46;
+            border-color: #10b981;
+        }
+
+        .message.error {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            color: #991b1b;
+            border-color: #ef4444;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #737373;
+        }
+
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state p {
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: 40px;
+            color: #737373;
+        }
+
+        .loading-state::after {
+            content: '...';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+
+        @media (max-width: 1024px) {
+            .add-user-form {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .user-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+
+            .user-actions {
+                width: 100%;
+                flex-direction: column;
+            }
+
+            .btn-action {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .admin-header {
+                flex-direction: column;
+                gap: 20px;
+                align-items: flex-start;
+            }
+
+            .admin-header-actions {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <a href="/" class="back-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            Voltar para o sistema
+        </a>
+        
+        <div class="admin-header">
+            <div class="admin-header-content">
+                <div class="admin-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        <path d="M9 12l2 2 4-4"></path>
+                    </svg>
+                </div>
+                <h1>Painel Administrativo</h1>
+            </div>
+            <div class="admin-header-actions">
+                <button id="logoutBtn" class="btn-logout">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    <span>Sair</span>
+                </button>
+            </div>
+        </div>
+        
+        <div id="message" class="message"></div>
+        
+        <!-- Adicionar Usuário -->
+        <div class="admin-card">
+            <div class="card-header">
+                <div class="card-header-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <line x1="19" y1="8" x2="19" y2="14"></line>
+                        <line x1="22" y1="11" x2="16" y2="11"></line>
+                    </svg>
+                </div>
+                <h2>Adicionar Novo Usuário</h2>
+            </div>
+            <form id="addUserForm" class="add-user-form">
+                <div class="form-group">
+                    <label for="username">Usuário (Email)</label>
+                    <input type="email" id="username" name="username" placeholder="usuario@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Senha</label>
+                    <input type="password" id="password" name="password" placeholder="Digite a senha" required>
+                </div>
+                <div class="form-group">
+                    <label for="role">Tipo de Acesso</label>
+                    <select id="role" name="role" required>
+                        <option value="user">👤 Usuário</option>
+                        <option value="admin">👑 Administrador</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-add">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline; margin-right: 6px;">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Adicionar
+                </button>
+            </form>
+        </div>
+        
+        <!-- Lista de Usuários -->
+        <div class="admin-card">
+            <div class="card-header">
+                <div class="card-header-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                </div>
+                <h2>Usuários Cadastrados</h2>
+            </div>
+            <ul id="usersList" class="users-list">
+                <li class="loading-state">Carregando usuários</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        let isSuperAdmin = false;
+        let currentUsername = '';
+        
+        // Obter username atual
+        async function getCurrentUser() {
+            try {
+                const response = await fetch('/api/auth/check');
+                const data = await response.json();
+                if (data.authenticated) {
+                    currentUsername = data.username || '';
+                }
+            } catch (error) {
+                console.error('Erro ao obter usuário atual:', error);
+            }
+        }
+        
+        async function loadUsers() {
+            try {
+                const response = await fetch('/api/admin/users');
+                const data = await response.json();
+                
+                if (data.success) {
+                    isSuperAdmin = data.is_super_admin || false;
+                    
+                    const roleSelect = document.getElementById('role');
+                    if (roleSelect) {
+                        if (!isSuperAdmin) {
+                            roleSelect.disabled = true;
+                            roleSelect.value = 'user';
+                            roleSelect.title = 'Apenas o super administrador pode criar novos administradores';
+                            roleSelect.style.opacity = '0.6';
+                            roleSelect.style.cursor = 'not-allowed';
+                        } else {
+                            roleSelect.disabled = false;
+                            roleSelect.title = '';
+                            roleSelect.style.opacity = '1';
+                            roleSelect.style.cursor = 'pointer';
+                        }
+                    }
+                    
+                    const usersList = document.getElementById('usersList');
+                    if (data.users.length === 0) {
+                        usersList.innerHTML = `
+                            <li class="empty-state">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                </svg>
+                                <p>Nenhum usuário cadastrado</p>
+                            </li>
+                        `;
+                        return;
+                    }
+                    
+                    usersList.innerHTML = data.users.map(user => {
+                        const initial = user.username.charAt(0).toUpperCase();
+                        const isAdmin = user.role === 'admin';
+                        const isCurrentUser = user.username === currentUsername;
+                        const canManageAdmin = isSuperAdmin;
+                        const canManage = !isAdmin || canManageAdmin;
+                        const canDelete = canManage && !isCurrentUser;
+                        const canChangeRole = canManage && !isCurrentUser;
+                        
+                        return `
+                        <li class="user-item">
+                            <div class="user-info">
+                                <div class="user-avatar">${initial}</div>
+                                <div class="user-details">
+                                    <div class="user-username">${user.username}</div>
+                                    <span class="user-role-badge ${user.role}">
+                                        ${isAdmin ? '👑' : '👤'} ${isAdmin ? 'Administrador' : 'Usuário'}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="user-actions">
+                                ${canChangeRole ? (
+                                    isAdmin ? 
+                                        `<button class="btn-action btn-role" onclick="changeRole('${user.username}', 'user')">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M18 9l-6-6-6 6"></path>
+                                                <path d="M12 3v18"></path>
+                                            </svg>
+                                            Remover Admin
+                                        </button>` :
+                                        `<button class="btn-action btn-role" onclick="changeRole('${user.username}', 'admin')">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M12 5v14"></path>
+                                                <path d="M5 12l7-7 7 7"></path>
+                                            </svg>
+                                            Tornar Admin
+                                        </button>`
+                                ) : isAdmin && !isSuperAdmin ? 
+                                    '<span style="color: var(--text-lighter); font-size: 0.875rem; font-style: italic; padding: 8px;">Apenas super admin pode gerenciar</span>' : ''}
+                                ${canDelete ? `
+                                <button class="btn-action btn-danger" onclick="deleteUser('${user.username}')">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                    </svg>
+                                    Remover
+                                </button>
+                                ` : ''}
+                            </div>
+                        </li>
+                    `;
+                    }).join('');
+                }
+            } catch (error) {
+                showMessage('Erro ao carregar usuários', 'error');
+            }
+        }
+        
+        // Adicionar usuário
+        document.getElementById('addUserForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            let role = document.getElementById('role').value;
+            
+            // Se não for super admin, forçar role como 'user'
+            if (!isSuperAdmin && role === 'admin') {
+                showMessage('✗ Apenas o super administrador pode criar novos administradores', 'error');
+                document.getElementById('role').value = 'user';
+                return;
+            }
+            
+            const submitBtn = document.querySelector('.btn-add');
+            const originalText = submitBtn.innerHTML;
+            
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span>Adicionando...</span>';
+            
+            try {
+                const response = await fetch('/api/admin/users', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password, role })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage('✓ ' + data.message, 'success');
+                    document.getElementById('addUserForm').reset();
+                    // Resetar role para 'user' se não for super admin
+                    if (!isSuperAdmin) {
+                        document.getElementById('role').value = 'user';
+                    }
+                    loadUsers();
+                } else {
+                    showMessage('✗ ' + data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('✗ Erro ao adicionar usuário', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        });
+        
+        // Deletar usuário
+        async function deleteUser(username) {
+            if (!confirm(`Tem certeza que deseja remover o usuário "${username}"?\n\nEsta ação não pode ser desfeita.`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/admin/users/${encodeURIComponent(username)}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage('✓ ' + data.message, 'success');
+                    loadUsers();
+                } else {
+                    showMessage('✗ ' + data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('✗ Erro ao remover usuário', 'error');
+            }
+        }
+        
+        // Alterar role
+        async function changeRole(username, newRole) {
+            const action = newRole === 'admin' ? 'tornar administrador' : 'remover acesso de administrador';
+            if (!confirm(`Tem certeza que deseja ${action} o usuário "${username}"?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/admin/users/${encodeURIComponent(username)}/role`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ role: newRole })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage('✓ ' + data.message, 'success');
+                    loadUsers();
+                } else {
+                    showMessage('✗ ' + data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('✗ Erro ao alterar role', 'error');
+            }
+        }
+        
+        // Mostrar mensagem
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type}`;
+            messageDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            if (confirm('Deseja realmente sair?')) {
+                try {
+                    await fetch('/api/auth/logout', {
+                        method: 'POST'
+                    });
+                    window.location.href = '/login';
+                } catch (error) {
+                    window.location.href = '/login';
+                }
+            }
+        });
+        
+        // Carregar usuários ao carregar a página
+        getCurrentUser().then(() => {
+            loadUsers();
+        });
+    </script>
+</body>
+</html>
