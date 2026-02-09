@@ -19,8 +19,10 @@ app.config['UPLOAD_FOLDER'] = 'data/input'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
 
-app.template_folder = '../templates'
-app.static_folder = 'static'
+# Usar caminhos absolutos baseados no root_dir para garantir funcionamento no servidor
+app.template_folder = str(root_dir / 'templates')
+app.static_folder = str(root_dir / 'app' / 'static')
+app.static_url_path = '/static'
 
 from app.routes import upload, processos, resultados, auth, admin, extracoes
 
