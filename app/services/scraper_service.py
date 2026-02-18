@@ -4,6 +4,9 @@ import importlib
 from typing import List, Dict, Any
 import traceback
 import time
+import logging
+
+logger = logging.getLogger(__name__)
 
 class ScraperService:
     def __init__(self):
@@ -20,18 +23,17 @@ class ScraperService:
                 module = importlib.import_module(module_path)
                 scraper_class = getattr(module, class_name)
                 self.scrapers_instances[tribunal_key] = scraper_class(tribunal_config)
-                print(f"Configurando driver para {tribunal_key}...")
+                logger.info(f"Configurando driver para {tribunal_key}...")
                 self.scrapers_instances[tribunal_key].setup_driver()
-                print(f"Driver configurado com sucesso para {tribunal_key}")
+                logger.info(f"Driver configurado com sucesso para {tribunal_key}")
             except Exception as e:
-                print(f"Erro ao criar scraper para {tribunal_key}: {str(e)}")
-                print(traceback.format_exc())
+                logger.error(f"Erro ao criar scraper para {tribunal_key}: {str(e)}", exc_info=True)
                 raise
         
         return self.scrapers_instances[tribunal_key]
     
     async def processar_processo(self, numero_processo: str, tribunal_key: str) -> Dict[str, Any]:
-        print(f"Processando processo: {numero_processo} - Tribunal: {tribunal_key}")
+        logger.info(f"Processando processo: {numero_processo} - Tribunal: {tribunal_key}")
         try:
             scraper = self.get_scraper(tribunal_key)
             loop = asyncio.get_event_loop()
@@ -41,7 +43,8 @@ class ScraperService:
                 numero_processo
             )
             
-            print(f"Resultado para {numero_processo}: {resultado.get('sucesso', False)}")
+            status_resultado = resultado.get('sucesso', False)
+            logger.info(f"Resultado para {numero_processo}: {'sucesso' if status_resultado else 'erro'}")
             
             return {
                 'numero_processo': numero_processo,
@@ -51,9 +54,7 @@ class ScraperService:
                 'erro': resultado.get('erro') if not resultado.get('sucesso') else None
             }
         except Exception as e:
-            error_trace = traceback.format_exc()
-            print(f"Erro completo ao processar {numero_processo}:")
-            print(error_trace)
+            logger.error(f"Erro completo ao processar {numero_processo}: {str(e)}", exc_info=True)
             mensagem_amigavel = self._obter_mensagem_amigavel(e)
             
             return {
@@ -81,19 +82,20 @@ class ScraperService:
             ordem_original.append((idx, processo))
         resultados_dict = {}
         for tribunal_key, lista_processos in processos_por_tribunal.items():
-            print(f"\n{'='*50}")
-            print(f"Processando {len(lista_processos)} processos do {TRIBUNAIS_MAP.get(tribunal_key, {}).get('nome', tribunal_key)}")
-            print(f"{'='*50}\n")
+            tribunal_nome = TRIBUNAIS_MAP.get(tribunal_key, {}).get('nome', tribunal_key)
+            logger.info(f"{'='*50}")
+            logger.info(f"Processando {len(lista_processos)} processos do {tribunal_nome}")
+            logger.info(f"{'='*50}")
             
             for idx, processo in lista_processos:
-                print(f"Processando {idx+1}/{total}: {processo.get('numero_processo')}")
+                logger.info(f"Processando {idx+1}/{total}: {processo.get('numero_processo')}")
                 resultado = await self.processar_processo(
                     processo['numero_processo'],
                     processo['tribunal']
                 )
                 resultados_dict[idx] = resultado
             
-            print(f"\nConcluído processamento do {TRIBUNAIS_MAP.get(tribunal_key, {}).get('nome', tribunal_key)}. Fechando abas...")
+            logger.info(f"Concluído processamento do {tribunal_nome}. Fechando abas...")
             self._fechar_abas_tribunal(tribunal_key)
         
         for idx, processo in processos_sem_tribunal:
@@ -125,7 +127,7 @@ class ScraperService:
                 elif hasattr(scraper, '_fechar_abas_extras'):
                     scraper._fechar_abas_extras(None)
             except Exception as e:
-                print(f"Erro ao fechar abas do tribunal {tribunal_key}: {e}")
+                logger.warning(f"Erro ao fechar abas do tribunal {tribunal_key}: {e}")
 
     def _obter_mensagem_amigavel(self, exception: Exception) -> str:
         error_str = str(exception).lower()

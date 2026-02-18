@@ -8,6 +8,51 @@
       "data_criacao": "2026-02-08T16:24:04.183707",
       "total_processos": 9,
       "filepath": "data\\output\\resultados_tratados_20260208_162404.xlsx"
+    },
+    {
+      "id": "1770935636.802181",
+      "username": "ubiratoin@gmail.com",
+      "filename": "resultados_tratados_20260212_193356.xlsx",
+      "tipo": "tratado",
+      "data_criacao": "2026-02-12T19:33:56.802187",
+      "total_processos": 33,
+      "filepath": "data\\output\\resultados_tratados_20260212_193356.xlsx"
+    },
+    {
+      "id": "1770935738.628745",
+      "username": "ubiratoin@gmail.com",
+      "filename": "resultados_raspados_20260212_193538.xlsx",
+      "tipo": "raspado",
+      "data_criacao": "2026-02-12T19:35:38.628749",
+      "total_processos": 33,
+      "filepath": "data\\output\\resultados_raspados_20260212_193538.xlsx"
+    },
+    {
+      "id": "1770939803.624289",
+      "username": "ubiratoin@gmail.com",
+      "filename": "resultados_tratados_20260212_204323.xlsx",
+      "tipo": "tratado",
+      "data_criacao": "2026-02-12T20:43:23.624294",
+      "total_processos": 33,
+      "filepath": "data\\output\\resultados_tratados_20260212_204323.xlsx"
+    },
+    {
+      "id": "1770939824.321635",
+      "username": "amanda.xelian@valenca.adv.br",
+      "filename": "resultados_tratados_20260212_204343.xlsx",
+      "tipo": "tratado",
+      "data_criacao": "2026-02-12T20:43:44.321641",
+      "total_processos": 59,
+      "filepath": "data\\output\\resultados_tratados_20260212_204343.xlsx"
+    },
+    {
+      "id": "1770939835.745852",
+      "username": "amanda.xelian@valenca.adv.br",
+      "filename": "resultados_raspados_20260212_204355.xlsx",
+      "tipo": "raspado",
+      "data_criacao": "2026-02-12T20:43:55.745856",
+      "total_processos": 59,
+      "filepath": "data\\output\\resultados_raspados_20260212_204355.xlsx"
     }
   ]
 }

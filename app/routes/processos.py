@@ -5,9 +5,11 @@ import asyncio
 import traceback
 import uuid
 import threading
+import logging
 from collections import defaultdict
 
 bp = Blueprint('processos', __name__, url_prefix='/api')
+logger = logging.getLogger(__name__)
 
 scraper_service = ScraperService()
 
@@ -21,6 +23,9 @@ def processar_scraping_async(session_id, processos):
         session_data = scraping_sessions[session_id]
         session_data['status'] = 'processing'
         session_data['resultados_parciais'] = {}
+        session_data['total_processos'] = len(processos)  # Armazenar total para status
+        
+        logger.info(f"Iniciando scraping - Sessão: {session_id}, Total de processos: {len(processos)}")
         
         total = len(processos)
         processos_por_tribunal = defaultdict(list)
@@ -86,19 +91,26 @@ def processar_scraping_async(session_id, processos):
             resultados = [resultados_dict[idx] for idx in range(len(processos))]
             session_data['resultados'] = resultados
             session_data['status'] = 'completed'
+            logger.info(f"Scraping concluído com sucesso - Sessão: {session_id}, Processos processados: {len(resultados)}")
         else:
             session_data['status'] = 'aborted'
+            logger.warning(f"Scraping abortado pelo usuário - Sessão: {session_id}")
         
         scraper_service.fechar_scrapers()
         
         loop.close()
     except Exception as e:
+        logger.error(f"Erro fatal na sessão {session_id}: {str(e)}", exc_info=True)
         session_data['status'] = 'error'
         mensagem_amigavel = scraper_service._obter_mensagem_amigavel(e)
         session_data['error'] = mensagem_amigavel
-        traceback.print_exc()
         try:
             scraper_service.fechar_scrapers()
+        except:
+            pass
+    finally:
+        try:
+            loop.close()
         except:
             pass
 
@@ -116,7 +128,8 @@ def iniciar_scraping():
             'status': 'starting',
             'resultados_parciais': {},
             'resultados': None,
-            'aborted': False
+            'aborted': False,
+            'total_processos': len(processos)  # Armazenar total desde o início
         }
         scraping_sessions[session_id] = session_data
         
@@ -132,9 +145,7 @@ def iniciar_scraping():
             'session_id': session_id
         })
     except Exception as e:
-        error_trace = traceback.format_exc()
-        print(f"Erro completo ao processar scraping:")
-        print(error_trace)
+        logger.error(f"Erro ao iniciar scraping: {str(e)}", exc_info=True)
         return jsonify({
             'error': 'Erro ao processar scraping. Tente novamente.'
         }), 500
@@ -186,3 +197,7 @@ def abortar_scraping(session_id):
 @login_required
 def status_geral():
     return jsonify({'status': 'ok'})
+
+def get_scraping_sessions_snapshot():
+    import copy
+    return copy.deepcopy(scraping_sessions)

@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify, render_template, session
 from app.services.auth_service import AuthService
 from app.utils.auth_decorator import admin_required
+from app.routes.processos import get_scraping_sessions_snapshot
 
 bp = Blueprint('admin', __name__, url_prefix='/api/admin')
 
@@ -48,11 +49,9 @@ def delete_user(username):
     """Remove um usuário"""
     current_username = session.get('username', '')
     
-    # Não permitir remover a si mesmo
     if username == current_username:
         return jsonify({'success': False, 'error': 'Você não pode remover a si mesmo'}), 400
     
-    # Verificar se pode remover (apenas super admin pode remover outros admins)
     if not AuthService.can_manage_admin(current_username, username):
         return jsonify({'success': False, 'error': 'Apenas o super administrador pode remover outros administradores'}), 403
     
@@ -64,7 +63,6 @@ def delete_user(username):
 @bp.route('/users/<username>/role', methods=['PUT'])
 @admin_required
 def update_user_role(username):
-    """Atualiza o role de um usuário"""
     current_username = session.get('username', '')
     data = request.get_json()
     new_role = data.get('role', '')
@@ -90,3 +88,86 @@ def update_user_role(username):
     if success:
         return jsonify({'success': True, 'message': message})
     return jsonify({'success': False, 'error': message}), 404
+
+@bp.route('/scraping-status', methods=['GET'])
+@admin_required
+def scraping_status():
+    """Retorna status das extrações em andamento (apenas super admin)"""
+    current_username = session.get('username', '')
+    
+    # Apenas super admin pode ver
+    if not AuthService.is_super_admin(current_username):
+        return jsonify({'error': 'Acesso negado'}), 403
+    
+    # Obter snapshot das sessões (cópia, não referencia)
+    scraping_sessions = get_scraping_sessions_snapshot()
+    
+    # Contar sessões ativas
+    sessoes_ativas = []
+    total_processos_em_fila = 0
+    total_processos_processando = 0
+    total_processos_concluidos = 0
+    
+    for session_id, session_data in scraping_sessions.items():
+        status = session_data.get('status', 'unknown')
+        
+        # Sessões ativas são as que estão starting ou processing
+        if status in ['starting', 'processing']:
+            resultados_parciais = session_data.get('resultados_parciais', {})
+            
+            # Contar processos por status nos resultados parciais
+            processos_em_fila = 0
+            processos_processando = 0
+            processos_concluidos = 0
+            
+            for resultado in resultados_parciais.values():
+                resultado_status = resultado.get('status', 'pendente')
+                if resultado_status == 'pendente':
+                    processos_em_fila += 1
+                elif resultado_status == 'processando':
+                    processos_processando += 1
+                elif resultado_status == 'sucesso' or resultado_status == 'erro':
+                    processos_concluidos += 1
+            
+            # Se não há resultados parciais ainda e está starting, pode estar iniciando
+            # Nesse caso, não sabemos quantos processos há, então não contamos na fila
+            # mas ainda mostramos a sessão como ativa
+            
+            total_processos_em_fila += processos_em_fila
+            total_processos_processando += processos_processando
+            total_processos_concluidos += processos_concluidos
+            
+            # Obter total de processos da sessão (se disponível)
+            total_processos_sessao = session_data.get('total_processos')
+            total_processos = processos_em_fila + processos_processando + processos_concluidos
+            
+            # Se temos o total da sessão, calcular processos em fila corretamente
+            if total_processos_sessao is not None:
+                processos_em_fila = max(0, total_processos_sessao - processos_processando - processos_concluidos)
+                total_processos = total_processos_sessao
+            
+            total_processos_em_fila += processos_em_fila
+            total_processos_processando += processos_processando
+            total_processos_concluidos += processos_concluidos
+            
+            sessoes_ativas.append({
+                'session_id': session_id,
+                'status': status,
+                'processos_em_fila': processos_em_fila,
+                'processos_processando': processos_processando,
+                'processos_concluidos': processos_concluidos,
+                'total_processos': total_processos
+            })
+    
+    return jsonify({
+        'success': True,
+        'tem_extracao_ativa': len(sessoes_ativas) > 0,
+        'total_sessoes_ativas': len(sessoes_ativas),
+        'sessoes_ativas': sessoes_ativas,
+        'resumo': {
+            'total_processos_em_fila': total_processos_em_fila,
+            'total_processos_processando': total_processos_processando,
+            'total_processos_concluidos': total_processos_concluidos,
+            'total_processos': total_processos_em_fila + total_processos_processando + total_processos_concluidos
+        }
+    })

@@ -521,6 +521,151 @@
                 width: 100%;
             }
         }
+        
+        /* Status de Scraping */
+        .scraping-status-active {
+            padding: 20px;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+        
+        .status-indicator.active {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            color: #1e40af;
+        }
+        
+        .status-indicator.inactive {
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            color: #6b7280;
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-indicator.inactive .status-dot {
+            background: #9ca3af;
+            animation: none;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .scraping-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .stat-box {
+            background: #ffffff;
+            border: 2px solid #e5e5e5;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #737373;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: 800;
+            color: #000000;
+        }
+        
+        .stat-value.processing {
+            color: #f59e0b;
+        }
+        
+        .stat-value.success {
+            color: #10b981;
+        }
+        
+        .sessao-item {
+            background: #ffffff;
+            border: 2px solid #e5e5e5;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        
+        .sessao-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .sessao-id {
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+        
+        .sessao-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .sessao-status.processing {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .sessao-status.starting {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .sessao-stats {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            font-size: 14px;
+            color: #737373;
+        }
+        
+        .sessao-stats span {
+            padding: 4px 8px;
+            background: #f5f5f5;
+            border-radius: 6px;
+        }
+        
+        .scraping-status-loading {
+            text-align: center;
+            padding: 40px;
+            color: #737373;
+        }
+        
+        .scraping-status-inactive {
+            padding: 20px;
+        }
+        
+        .scraping-status-error {
+            padding: 20px;
+            color: #ef4444;
+        }
     </style>
 </head>
 <body>
@@ -555,6 +700,24 @@
         </div>
         
         <div id="message" class="message"></div>
+        
+        <!-- Status de Scraping (Apenas Super Admin) -->
+        <div class="admin-card" id="scrapingStatusCard" style="display: none;">
+            <div class="card-header">
+                <div class="card-header-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                </div>
+                <h2>Status de Scraping em Tempo Real</h2>
+            </div>
+            <div id="scrapingStatusContent">
+                <div class="scraping-status-loading">
+                    <span>Carregando status...</span>
+                </div>
+            </div>
+        </div>
         
         <!-- Adicionar Usuário -->
         <div class="admin-card">
@@ -860,7 +1023,99 @@
         // Carregar usuários ao carregar a página
         getCurrentUser().then(() => {
             loadUsers();
+            checkAndLoadScrapingStatus();
         });
+        
+        // Verificar se é super admin e mostrar card de status
+        async function checkAndLoadScrapingStatus() {
+            try {
+                const response = await fetch('/api/auth/check');
+                const data = await response.json();
+                
+                if (data.authenticated && data.username === 'moesio.fiuza@valenca.adv.br') {
+                    const scrapingStatusCard = document.getElementById('scrapingStatusCard');
+                    if (scrapingStatusCard) {
+                        scrapingStatusCard.style.display = 'block';
+                        loadScrapingStatus();
+                        // Atualizar a cada 3 segundos
+                        setInterval(loadScrapingStatus, 3000);
+                    }
+                }
+            } catch (error) {
+                console.error('Erro ao verificar status de scraping:', error);
+            }
+        }
+        
+        async function loadScrapingStatus() {
+            const content = document.getElementById('scrapingStatusContent');
+            if (!content) return;
+            
+            try {
+                const response = await fetch('/api/admin/scraping-status');
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (data.tem_extracao_ativa) {
+                        content.innerHTML = `
+                            <div class="scraping-status-active">
+                                <div class="status-indicator active">
+                                    <span class="status-dot"></span>
+                                    <strong>Extração em andamento</strong>
+                                </div>
+                                <div class="scraping-stats">
+                                    <div class="stat-box">
+                                        <div class="stat-label">Sessões Ativas</div>
+                                        <div class="stat-value">${data.total_sessoes_ativas}</div>
+                                    </div>
+                                    <div class="stat-box">
+                                        <div class="stat-label">Em Fila</div>
+                                        <div class="stat-value">${data.resumo.total_processos_em_fila}</div>
+                                    </div>
+                                    <div class="stat-box">
+                                        <div class="stat-label">Processando</div>
+                                        <div class="stat-value processing">${data.resumo.total_processos_processando}</div>
+                                    </div>
+                                    <div class="stat-box">
+                                        <div class="stat-label">Concluídos</div>
+                                        <div class="stat-value success">${data.resumo.total_processos_concluidos}</div>
+                                    </div>
+                                </div>
+                                ${data.sessoes_ativas.map(sessao => `
+                                    <div class="sessao-item">
+                                        <div class="sessao-header">
+                                            <span class="sessao-id">Sessão: ${sessao.session_id.substring(0, 8)}...</span>
+                                            <span class="sessao-status ${sessao.status}">${sessao.status === 'processing' ? 'Processando' : 'Iniciando'}</span>
+                                        </div>
+                                        <div class="sessao-stats">
+                                            <span>Fila: ${sessao.processos_em_fila}</span>
+                                            <span>Processando: ${sessao.processos_processando}</span>
+                                            <span>Concluídos: ${sessao.processos_concluidos}</span>
+                                            <span>Total: ${sessao.total_processos}</span>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `;
+                    } else {
+                        content.innerHTML = `
+                            <div class="scraping-status-inactive">
+                                <div class="status-indicator inactive">
+                                    <span class="status-dot"></span>
+                                    <strong>Nenhuma extração em andamento</strong>
+                                </div>
+                                <p style="color: var(--text-lighter); margin-top: 12px;">O sistema está ocioso</p>
+                            </div>
+                        `;
+                    }
+                }
+            } catch (error) {
+                content.innerHTML = `
+                    <div class="scraping-status-error">
+                        <p>Erro ao carregar status: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
     </script>
 </body>
 </html>
