@@ -14,6 +14,16 @@
       "username": "ubiratoin@gmail.com",
       "password_hash": "scrypt:32768:8:1$mVAZBiEJEBJFYlCq$69d3f8c554f87b7712b34c5a34901ed096c3ab1ca623d10df751add25ef8f21897a3c23e7e47d598a91998164cc5bff56ed2bb9cdb9768003b05d752edf9345c",
       "role": "user"
+    },
+    {
+      "username": "patricia.costa@valenca.adv.br",
+      "password_hash": "scrypt:32768:8:1$Z8spPCxI9r22dfyx$ac126680a047c4f846978ca161776036b61ca131d74db7388f7cc65d90f23e4e0123ad150c18d17309ec418da393fc039019afd809622c957cf59129f758a597",
+      "role": "user"
+    },
+    {
+      "username": "vitoria.lurdite@gmail.com",
+      "password_hash": "scrypt:32768:8:1$9KwLhCDY6qGAJlmj$724bc0d26cf2436dc2a4a5a79b92c00ce1972cd8a9668aebb40396de6b7315f131cb719755b7e062c9081e98f0e59dd7febe19c616f06e20c9cbb05921bd5ade",
+      "role": "admin"
     }
   ]
 }

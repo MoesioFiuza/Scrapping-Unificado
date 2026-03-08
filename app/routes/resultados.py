@@ -41,6 +41,8 @@ def exportar_resultados():
                     texto = re.sub(r'\s+', ' ', str(texto))
                     return texto.strip()
                 
+                nomes_polo_ativo = [TransformadorDados.normalizar_nome_participante(p.get('nome', '') or p.get('nome_completo', '')) for p in polo_ativo]
+                nomes_polo_passivo = [TransformadorDados.normalizar_nome_participante(p.get('nome', '') or p.get('nome_completo', '')) for p in polo_passivo]
                 dados_export.append({
                     'Numero Processo': limpar_texto(resultado.get('numero_processo', '')),
                     'Tribunal': limpar_texto(resultado.get('tribunal', '')),
@@ -49,8 +51,8 @@ def exportar_resultados():
                     'Assunto': limpar_texto(dados_processo.get('assunto', '')),
                     'Jurisdicao': limpar_texto(dados_processo.get('jurisdicao', '')),
                     'Orgao Julgador': limpar_texto(dados_processo.get('orgao_julgador', '')),
-                    'Polo Ativo': '; '.join([limpar_texto(p.get('nome', '')) for p in polo_ativo]),
-                    'Polo Passivo': '; '.join([limpar_texto(p.get('nome', '')) for p in polo_passivo]),
+                    'Polo Ativo': '; '.join(n for n in nomes_polo_ativo if n),
+                    'Polo Passivo': '; '.join(n for n in nomes_polo_passivo if n),
                     'Movimentacoes': limpar_texto(texto_movimentacoes),
                     'Total Movimentacoes': len(movimentacoes),
                     'Total Documentos': len(dados.get('documentos', []))
@@ -149,8 +151,10 @@ def exportar_resultados_tratados():
         
         df = pd.DataFrame(dados_transformados)
         
+        # Coluna Advogado Parte Contraria (nome + OAB) entre partePoloAtivo e tipoPartePoloPassivo
         colunas_ordenadas = [
             'pasta', 'numeroProcessoAnterior', 'cnj', 'tipoPartePoloAtivo', 'partePoloAtivo',
+            'Advogado Parte Contraria',
             'tipoPartePoloPassivo', 'partePoloPassivo', 'cliente', 'tipoDeRito', 'dataDistribuicao',
             'numeroUnidade', 'unidade', 'especialidade', 'comarca', 'estado', 'orgao', 'natureza',
             'materia', 'dataInstancia', 'tipoInstancia', 'sistemaExterno', 'processoEletronico',
@@ -197,7 +201,7 @@ def exportar_resultados_tratados():
                 col_letter = get_column_letter(idx)
                 if col == 'cnj':
                     worksheet.column_dimensions[col_letter].width = 25  # Número do processo mais largo
-                elif col in ['partePoloAtivo', 'partePoloPassivo', 'descricaoEvento', 'descricaoAndamento']:
+                elif col in ['partePoloAtivo', 'partePoloPassivo', 'Advogado Parte Contraria', 'descricaoEvento', 'descricaoAndamento']:
                     worksheet.column_dimensions[col_letter].width = 40  # Colunas de texto mais largas
                 else:
                     worksheet.column_dimensions[col_letter].width = 20
@@ -225,7 +229,7 @@ def exportar_resultados_tratados():
                 col_letter = get_column_letter(idx)
                 if col == 'cnj':
                     worksheet.column_dimensions[col_letter].width = 25
-                elif col in ['partePoloAtivo', 'partePoloPassivo', 'descricaoEvento', 'descricaoAndamento']:
+                elif col in ['partePoloAtivo', 'partePoloPassivo', 'Advogado Parte Contraria', 'descricaoEvento', 'descricaoAndamento']:
                     worksheet.column_dimensions[col_letter].width = 40
                 else:
                     worksheet.column_dimensions[col_letter].width = 20

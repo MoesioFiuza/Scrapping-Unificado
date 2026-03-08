@@ -33,6 +33,16 @@ class TransformadorDados:
             return ""
         texto = re.sub(r'\s+', ' ', str(texto))
         return texto.strip()
+
+    @staticmethod
+    def normalizar_nome_participante(nome: str) -> str:
+        """Remove expressões como 'registrado(a) civilmente como X' do nome para exibição limpa na planilha."""
+        if not nome:
+            return ""
+        nome = TransformadorDados.limpar_texto(nome)
+        # Remove "registrado(a) civilmente como ..." (até o fim ou até próximo trecho relevante)
+        nome = re.sub(r'\s*registrado\(a\)\s+civilmente\s+como\s+.+$', '', nome, flags=re.IGNORECASE)
+        return nome.strip()
     
     @staticmethod
     def extrair_numero_cnj(numero_processo: str) -> str:
@@ -239,6 +249,7 @@ class TransformadorDados:
         ##print(f"DEBUG - Comarca: {comarca}, Unidade: {unidade}, NumeroUnidade: {numero_unidade}, Especialidade: {especialidade}")
         
         partes_ativas_nomes = []
+        advogados_polo_ativo = []
         for parte in polo_ativo:
             nome = TransformadorDados.limpar_texto(parte.get('nome', '') or parte.get('nome_completo', ''))
             nome_completo = TransformadorDados.limpar_texto(parte.get('nome_completo', ''))
@@ -247,6 +258,7 @@ class TransformadorDados:
             if not nome:
                 continue
             
+            nome_exibicao = TransformadorDados.normalizar_nome_participante(nome)
             tipo_upper = tipo.upper() if tipo else ''
             nome_completo_upper = nome_completo.upper() if nome_completo else ''
             nome_upper = nome.upper()
@@ -258,15 +270,20 @@ class TransformadorDados:
                 'OAB' in nome_upper
             )
             
-            if not is_advogado:
-                partes_ativas_nomes.append(nome)
+            if nome_exibicao:
+                if not is_advogado:
+                    partes_ativas_nomes.append(nome_exibicao)
+                else:
+                    oab = parte.get('oab') or ''
+                    texto_adv = f"{nome_exibicao} - OAB {oab}" if oab else nome_exibicao
+                    advogados_polo_ativo.append(texto_adv)
         
         partes_passivas_nomes = []
         for parte in polo_passivo:
             nome = TransformadorDados.limpar_texto(parte.get('nome', '') or parte.get('nome_completo', ''))
-            
-            if nome:
-                partes_passivas_nomes.append(nome)
+            nome_exibicao = TransformadorDados.normalizar_nome_participante(nome)
+            if nome_exibicao:
+                partes_passivas_nomes.append(nome_exibicao)
         
         cliente = partes_passivas_nomes[0] if partes_passivas_nomes else ""
         
@@ -289,6 +306,8 @@ class TransformadorDados:
             'cnj': TransformadorDados.extrair_numero_cnj(numero_processo),
             'tipoPartePoloAtivo': 'Autor' if partes_ativas_nomes else '',
             'partePoloAtivo': '; '.join(partes_ativas_nomes),
+            # Advogado Parte Contraria: nomes normalizados + OAB quando disponível (ex.: TJ-RJ)
+            'Advogado Parte Contraria': '; '.join(advogados_polo_ativo),
             'tipoPartePoloPassivo': 'Réu' if partes_passivas_nomes else '',
             'partePoloPassivo': '; '.join(partes_passivas_nomes),
             'cliente': cliente,

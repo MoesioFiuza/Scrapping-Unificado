@@ -53,6 +53,69 @@
       "data_criacao": "2026-02-12T20:43:55.745856",
       "total_processos": 59,
       "filepath": "data\\output\\resultados_raspados_20260212_204355.xlsx"
+    },
+    {
+      "id": "1772972856.451622",
+      "username": "moesio.fiuza@valenca.adv.br",
+      "filename": "resultados_tratados_20260308_092736.xlsx",
+      "tipo": "tratado",
+      "data_criacao": "2026-03-08T09:27:36.451626",
+      "total_processos": 4,
+      "filepath": "data\\output\\resultados_tratados_20260308_092736.xlsx"
+    },
+    {
+      "id": "1772972952.279934",
+      "username": "moesio.fiuza@valenca.adv.br",
+      "filename": "resultados_raspados_20260308_092912.xlsx",
+      "tipo": "raspado",
+      "data_criacao": "2026-03-08T09:29:12.279938",
+      "total_processos": 4,
+      "filepath": "data\\output\\resultados_raspados_20260308_092912.xlsx"
+    },
+    {
+      "id": "1772973324.935358",
+      "username": "moesio.fiuza@valenca.adv.br",
+      "filename": "resultados_raspados_20260308_093524.xlsx",
+      "tipo": "raspado",
+      "data_criacao": "2026-03-08T09:35:24.935361",
+      "total_processos": 4,
+      "filepath": "data\\output\\resultados_raspados_20260308_093524.xlsx"
+    },
+    {
+      "id": "1772973331.213966",
+      "username": "moesio.fiuza@valenca.adv.br",
+      "filename": "resultados_tratados_20260308_093531.xlsx",
+      "tipo": "tratado",
+      "data_criacao": "2026-03-08T09:35:31.213970",
+      "total_processos": 4,
+      "filepath": "data\\output\\resultados_tratados_20260308_093531.xlsx"
+    },
+    {
+      "id": "1772973751.189457",
+      "username": "moesio.fiuza@valenca.adv.br",
+      "filename": "resultados_tratados_20260308_094231.xlsx",
+      "tipo": "tratado",
+      "data_criacao": "2026-03-08T09:42:31.189461",
+      "total_processos": 4,
+      "filepath": "data\\output\\resultados_tratados_20260308_094231.xlsx"
+    },
+    {
+      "id": "1772974227.354773",
+      "username": "moesio.fiuza@valenca.adv.br",
+      "filename": "resultados_tratados_20260308_095027.xlsx",
+      "tipo": "tratado",
+      "data_criacao": "2026-03-08T09:50:27.354776",
+      "total_processos": 4,
+      "filepath": "data\\output\\resultados_tratados_20260308_095027.xlsx"
+    },
+    {
+      "id": "1772976085.390284",
+      "username": "moesio.fiuza@valenca.adv.br",
+      "filename": "resultados_tratados_20260308_102125.xlsx",
+      "tipo": "tratado",
+      "data_criacao": "2026-03-08T10:21:25.390288",
+      "total_processos": 4,
+      "filepath": "data\\output\\resultados_tratados_20260308_102125.xlsx"
     }
   ]
 }

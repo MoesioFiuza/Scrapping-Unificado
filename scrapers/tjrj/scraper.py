@@ -472,8 +472,8 @@ class PJeScraperTJRJ(BaseScraper):
                 print("Tabela de polo ativo não encontrada")
                 return participantes
             
-            # Aguardar um pouco mais para garantir renderização
-            time.sleep(1)
+            # Aguardar um pouco mais para garantir renderização (AJAX/lazy)
+            time.sleep(1.5)
             
             # Método 1: Procurar diretamente pela tabela usando ID parcial
             try:
@@ -490,14 +490,29 @@ class PJeScraperTJRJ(BaseScraper):
                     print("Erro: Tabela de polo ativo não encontrada")
                     return participantes
             
+            # Rolagem para garantir que o painel está visível (pode disparar lazy-load)
+            try:
+                self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", tabela)
+                time.sleep(0.3)
+            except Exception:
+                pass
+            
             # Encontrar o tbody - pode ter ID específico ou ser apenas tbody
             try:
                 tbody = tabela.find_element(By.XPATH, ".//tbody[@id[contains(., 'tb')]]")
-            except:
+            except Exception:
                 tbody = tabela.find_element(By.TAG_NAME, "tbody")
             
-            # Encontrar todas as linhas (incluindo rich-table-firstrow)
-            linhas = tbody.find_elements(By.XPATH, ".//tr[contains(@class, 'rich-table-row')]")
+            # Aguardar pelo menos uma linha de dados (evita pegar tabela antes do AJAX)
+            try:
+                WebDriverWait(self.driver, 5).until(
+                    EC.presence_of_element_located((By.XPATH, "//table[contains(@id, 'processoPartesPoloAtivoResumidoList')]//tbody//tr[.//td]"))
+                )
+            except TimeoutException:
+                pass  # segue mesmo sem linha; pode ser processo sem partes
+            
+            # Todas as linhas com td (inclui rich-table-firstrow; evita perder primeira linha)
+            linhas = tbody.find_elements(By.XPATH, ".//tr[.//td]")
             print(f"Encontradas {len(linhas)} linhas no polo ativo")
             
             for linha in linhas:
@@ -567,8 +582,8 @@ class PJeScraperTJRJ(BaseScraper):
                 print("Tabela de polo passivo não encontrada")
                 return participantes
             
-            # Aguardar um pouco mais para garantir renderização
-            time.sleep(1)
+            # Aguardar um pouco mais para garantir renderização (AJAX/lazy)
+            time.sleep(1.5)
             
             # Método 1: Procurar diretamente pela tabela usando ID parcial
             try:
@@ -581,18 +596,33 @@ class PJeScraperTJRJ(BaseScraper):
                     panel = panel_header.find_element(By.XPATH, "./ancestor::div[contains(@class, 'rich-panel')]")
                     tabela = panel.find_element(By.XPATH, ".//table[contains(@id, 'processoPartesPoloPassivoResumidoList')]")
                     print("Tabela de polo passivo encontrada via panel header!")
-                except:
+                except Exception:
                     print("Erro: Tabela de polo passivo não encontrada")
                     return participantes
+            
+            # Rolagem para garantir que o painel está visível
+            try:
+                self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", tabela)
+                time.sleep(0.3)
+            except Exception:
+                pass
             
             # Encontrar o tbody
             try:
                 tbody = tabela.find_element(By.XPATH, ".//tbody[@id[contains(., 'tb')]]")
-            except:
+            except Exception:
                 tbody = tabela.find_element(By.TAG_NAME, "tbody")
             
-            # Encontrar todas as linhas
-            linhas = tbody.find_elements(By.XPATH, ".//tr[contains(@class, 'rich-table-row')]")
+            # Aguardar pelo menos uma linha de dados
+            try:
+                WebDriverWait(self.driver, 5).until(
+                    EC.presence_of_element_located((By.XPATH, "//table[contains(@id, 'processoPartesPoloPassivoResumidoList')]//tbody//tr[.//td]"))
+                )
+            except TimeoutException:
+                pass
+            
+            # Todas as linhas com td (inclui rich-table-firstrow)
+            linhas = tbody.find_elements(By.XPATH, ".//tr[.//td]")
             print(f"Encontradas {len(linhas)} linhas no polo passivo")
             
             for linha in linhas:
