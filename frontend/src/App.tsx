@@ -8,6 +8,7 @@ import { LoginPage } from '@/pages/LoginPage'
 import { ScraperPage } from '@/pages/ScraperPage'
 import { ExtracoesPage } from '@/pages/ExtracoesPage'
 import { AdminPage } from '@/pages/AdminPage'
+import { BASE_PATH } from '@/lib/paths'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,7 +23,7 @@ export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <BrowserRouter>
+        <BrowserRouter basename={BASE_PATH || undefined}>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route

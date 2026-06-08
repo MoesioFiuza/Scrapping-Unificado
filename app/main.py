@@ -7,15 +7,31 @@ from logging.handlers import RotatingFileHandler
 root_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(root_dir))
 
-from flask import Flask, render_template, session, redirect, url_for, send_from_directory, abort
+from flask import Flask, render_template, session, redirect, url_for, send_from_directory, abort, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 load_dotenv()
 
-from config.settings import DATABASE_URL, DATA_DIR
+from config.settings import (
+    APPLICATION_ROOT,
+    DATABASE_URL,
+    DATA_DIR,
+    IS_PRODUCTION,
+)
 from app.extensions import db, migrate
 from app.db.bootstrap import init_database
+
+
+def public_url(path: str = '/') -> str:
+    """URL pública com prefixo APPLICATION_ROOT (ex.: /scraper/login)."""
+    p = path if path.startswith('/') else f'/{path}'
+    if APPLICATION_ROOT:
+        if p == '/':
+            return f'{APPLICATION_ROOT}/'
+        return f'{APPLICATION_ROOT}{p}'
+    return p
 
 FRONTEND_DIST = root_dir / 'frontend' / 'dist'
 USE_SPA = FRONTEND_DIST.is_dir() and (FRONTEND_DIST / 'index.html').is_file()
@@ -60,6 +76,7 @@ logger = logging.getLogger(__name__)
 logger.info("Aplicação iniciando...")
 
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 CORS(app)
 
 app.config['UPLOAD_FOLDER'] = 'data/input'
@@ -67,6 +84,17 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+if APPLICATION_ROOT:
+    app.config['APPLICATION_ROOT'] = APPLICATION_ROOT
+    app.config['SESSION_COOKIE_PATH'] = APPLICATION_ROOT
+
+if IS_PRODUCTION:
+    app.config['SESSION_COOKIE_HTTPONLY'] = True
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    # Ativar SESSION_COOKIE_SECURE=True quando HTTPS estiver activo
+    if os.getenv('SESSION_COOKIE_SECURE', '').lower() == 'true':
+        app.config['SESSION_COOKIE_SECURE'] = True
 
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 db.init_app(app)
@@ -98,6 +126,13 @@ init_database(app)
 
 if USE_SPA:
     logger.info("Frontend React detectado em frontend/dist — modo SPA ativo")
+if APPLICATION_ROOT:
+    logger.info("Subpath activo: %s", APPLICATION_ROOT)
+
+
+@app.route('/api/health')
+def api_health():
+    return jsonify({'status': 'ok', 'service': 'scraper-unificado'})
 
 
 def _serve_spa(path: str = ""):
@@ -115,7 +150,7 @@ def _serve_spa(path: str = ""):
 def login():
     if USE_SPA:
         if session.get("authenticated"):
-            return redirect("/")
+            return redirect(public_url("/"))
         return _serve_spa()
     if session.get("authenticated"):
         return redirect(url_for("index"))

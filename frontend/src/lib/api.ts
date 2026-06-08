@@ -12,6 +12,7 @@ import type {
   AdminUser,
   AuditLogEntry,
 } from '@/types'
+import { withBase } from '@/lib/paths'
 
 class ApiError extends Error {
   status: number
@@ -21,8 +22,8 @@ class ApiError extends Error {
   }
 }
 
-async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
-  const res = await fetch(url, {
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const res = await fetch(withBase(path), {
     credentials: 'include',
     ...options,
     headers: {
@@ -44,7 +45,7 @@ async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
 export const api = {
   auth: {
     check: () =>
-      fetch('/api/auth/check', { credentials: 'include' }).then(async (res) => {
+      fetch(withBase('/api/auth/check'), { credentials: 'include' }).then(async (res) => {
         if (res.status === 401) return { authenticated: false } as AuthUser
         return res.json() as Promise<AuthUser>
       }),
@@ -112,14 +113,14 @@ export const api = {
 
   resultados: {
     exportarRaspado: (resultados: Processo[]) =>
-      fetch('/api/resultados/exportar', {
+      fetch(withBase('/api/resultados/exportar'), {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ resultados }),
       }),
     exportarTratado: (resultados: Processo[]) =>
-      fetch('/api/resultados/exportar-tratado', {
+      fetch(withBase('/api/resultados/exportar-tratado'), {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -144,7 +145,7 @@ export const api = {
       ),
     resumo: () =>
       request<{ success: boolean; resumo: DashboardResumo }>('/api/extracoes/resumo'),
-    downloadUrl: (id: string) => `/api/extracoes/download/${id}`,
+    downloadUrl: (id: string) => withBase(`/api/extracoes/download/${id}`),
     delete: (id: string) =>
       request<{ success: boolean }>(`/api/extracoes/deletar/${id}`, {
         method: 'DELETE',

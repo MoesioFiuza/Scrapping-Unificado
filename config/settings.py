@@ -76,3 +76,16 @@ DATAWEB_BASE_URL = os.getenv('DATAWEB_BASE_URL', 'http://212.47.68.222/dataweb')
 DATAWEB_TIMEOUT_SECONDS = int(os.getenv('DATAWEB_TIMEOUT_SECONDS', '600'))
 DATAWEB_MAX_CNJS = int(os.getenv('DATAWEB_MAX_CNJS_POR_REQUISICAO', '500'))
 DATAWEB_MAX_PARALLEL_LOTES = int(os.getenv('DATAWEB_MAX_PARALLEL_LOTES', '2'))
+
+# Deploy — subpath atrás de reverse proxy (ex.: http://212.47.68.222/scraper)
+APPLICATION_ROOT = os.getenv('APPLICATION_ROOT', '').strip().rstrip('/')
+if APPLICATION_ROOT and not APPLICATION_ROOT.startswith('/'):
+    APPLICATION_ROOT = f'/{APPLICATION_ROOT}'
+
+FLASK_ENV = os.getenv('FLASK_ENV', 'development').lower()
+IS_PRODUCTION = FLASK_ENV == 'production'
+
+# Gunicorn / bind interno (nginx faz proxy)
+GUNICORN_BIND = os.getenv('GUNICORN_BIND', '127.0.0.1:8001')
+GUNICORN_WORKERS = int(os.getenv('GUNICORN_WORKERS', '2'))
+GUNICORN_TIMEOUT = int(os.getenv('GUNICORN_TIMEOUT', '620'))
