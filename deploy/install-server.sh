@@ -1,12 +1,21 @@
 #!/usr/bin/env bash
 # Instalação no servidor Linux (212.47.68.222)
-# Executar como root ou com sudo: bash deploy/install-server.sh
+# Executar a partir da raiz do repositório: sudo bash deploy/install-server.sh
 set -euo pipefail
 
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 APP_DIR="${APP_DIR:-/opt/scraper-unificado}"
 APP_USER="${APP_USER:-www-data}"
 
-echo "==> Instalação em ${APP_DIR}"
+echo "==> Instalação: origem ${ROOT} → ${APP_DIR}"
+
+if [ "$ROOT" != "$APP_DIR" ]; then
+    mkdir -p "$APP_DIR"
+    rsync -a --exclude venv --exclude node_modules --exclude '.git' --exclude 'data/output' \
+        "$ROOT/" "$APP_DIR/"
+fi
+
+cd "$APP_DIR"
 
 apt-get update
 apt-get install -y python3 python3-venv python3-pip nginx \
@@ -28,14 +37,18 @@ fi
 
 python3 -m venv "$APP_DIR/venv"
 "$APP_DIR/venv/bin/pip" install --upgrade pip
-"$APP_DIR/venv/bin/pip" install -r requirements.txt
+"$APP_DIR/venv/bin/pip" install -r "$APP_DIR/requirements.txt"
 
-# Frontend (se node estiver instalado no servidor)
-if command -v npm >/dev/null 2>&1; then
-    bash deploy/build-prod.sh
+# Frontend
+if [ -d "$APP_DIR/frontend/dist" ] && [ -f "$APP_DIR/frontend/dist/index.html" ]; then
+    echo "frontend/dist já presente"
+elif command -v npm >/dev/null 2>&1; then
+    bash "$APP_DIR/deploy/build-prod.sh"
 else
-    echo "npm não encontrado — copie frontend/dist do build local (deploy/build-prod.sh)"
+    echo "AVISO: npm não encontrado — faça build local e envie frontend/dist"
 fi
+
+"$APP_DIR/venv/bin/python" "$APP_DIR/scripts/migrate_json_to_db.py" 2>/dev/null || true
 
 chown -R "$APP_USER:$APP_USER" "$APP_DIR"
 
