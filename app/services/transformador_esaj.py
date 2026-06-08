@@ -154,7 +154,7 @@ class TransformadorESAJ:
     def normalizar_lote(resultados: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         resultados_normalizados = []
         for resultado in resultados:
-            if resultado.get('tribunal') == '8.26':
+            if resultado.get('tribunal') in ('8.26', '8.02', '8.06_esaj'):
                 resultado_normalizado = TransformadorESAJ.normalizar_resultado(resultado)
                 resultados_normalizados.append(resultado_normalizado)
             else:

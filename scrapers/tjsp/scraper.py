@@ -1,4 +1,8 @@
 from scrapers.base import BaseScraper
+from scrapers.consulta_cli_common import (
+    MENSAGEM_ESAJ_SEM_INFORMACOES,
+    esaj_resposta_sem_informacoes,
+)
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -143,6 +147,14 @@ class ESAJScraperTJSP(BaseScraper):
                     'sucesso': False,
                     'numero_processo': numero_processo,
                     'erro': 'Processo requer senha'
+                }
+
+            if esaj_resposta_sem_informacoes(self.driver.page_source):
+                print(MENSAGEM_ESAJ_SEM_INFORMACOES)
+                return {
+                    'sucesso': False,
+                    'numero_processo': numero_processo,
+                    'erro': MENSAGEM_ESAJ_SEM_INFORMACOES,
                 }
             
             # Aguardar página carregar

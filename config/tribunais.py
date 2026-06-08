@@ -19,6 +19,16 @@ TRIBUNAIS_MAP = {
         "ramo_justica": "8",
         "tribunal_cnj": "06",
     },
+    # Mesmo segmento CNJ 8.06 que o PJe; escolha explícita no app/CLI (não entra em identificar_tribunal_por_processo como 8.06).
+    "8.06_esaj": {
+        "nome": "eSAJ CE",
+        "url_login": "https://esaj.tjce.jus.br/cpopg/open.do?servico=190101",
+        "url_consulta": "https://esaj.tjce.jus.br/cpopg/open.do?servico=190101",
+        "modulo_scraper": "scrapers.tjce_esaj.scraper",
+        "classe_scraper": "ESAJScraperTJCE",
+        "ramo_justica": "8",
+        "tribunal_cnj": "06",
+    },
     "8.13": {
         "nome": "TJMG",
         "url_login": "https://pjerecursal.tjmg.jus.br/pje/ConsultaPublica/listView.seam",
@@ -55,24 +65,33 @@ TRIBUNAIS_MAP = {
         "ramo_justica": "8",
         "tribunal_cnj": "07",
     },
-    "8.26": {
-    "nome": "eSAJ SP",
-    "url_login": "https://esaj.tjsp.jus.br/cpopg/open.do",
-    "url_consulta": "https://esaj.tjsp.jus.br/cpopg/open.do",
-    "modulo_scraper": "scrapers.tjsp.scraper",
-    "classe_scraper": "ESAJScraperTJSP",
-    "ramo_justica": "8",
-    "tribunal_cnj": "26",
+    "8.02": {
+        "nome": "eSAJ AL",
+        "url_login": "https://www2.tjal.jus.br/cpopg/open.do",
+        "url_consulta": "https://www2.tjal.jus.br/cpopg/open.do",
+        "modulo_scraper": "scrapers.tjal.scraper",
+        "classe_scraper": "ESAJScraperTJAL",
+        "ramo_justica": "8",
+        "tribunal_cnj": "02",
     },
-    ##"8.20": {
-    ##    "nome": "TJRN",
-    ##    "url_login": "https://pje1gconsulta.tjrn.jus.br/consultapublica/ConsultaPublica/listView.seam",
-    ##    "url_consulta": "https://pje1gconsulta.tjrn.jus.br/consultapublica/ConsultaPublica/listView.seam",
-    ##    "modulo_scraper": "scrapers.tjrn.scraper",
-    ##    "classe_scraper": "PJeScraperTJRN",
-    ##    "ramo_justica": "8",
-    ##    "tribunal_cnj": "20",
-    ##},
+    "8.26": {
+        "nome": "eSAJ SP",
+        "url_login": "https://esaj.tjsp.jus.br/cpopg/open.do",
+        "url_consulta": "https://esaj.tjsp.jus.br/cpopg/open.do",
+        "modulo_scraper": "scrapers.tjsp.scraper",
+        "classe_scraper": "ESAJScraperTJSP",
+        "ramo_justica": "8",
+        "tribunal_cnj": "26",
+    },
+    "8.20": {
+        "nome": "TJRN",
+        "url_login": "https://pje1gconsulta.tjrn.jus.br/consultapublica/ConsultaPublica/listView.seam",
+        "url_consulta": "https://pje1gconsulta.tjrn.jus.br/consultapublica/ConsultaPublica/listView.seam",
+        "modulo_scraper": "scrapers.tjrn.scraper",
+        "classe_scraper": "PJeScraperTJRN",
+        "ramo_justica": "8",
+        "tribunal_cnj": "20",
+    },
 }
 
 def identificar_tribunal_por_processo(numero_processo):
@@ -84,3 +103,14 @@ def identificar_tribunal_por_processo(numero_processo):
         if chave in TRIBUNAIS_MAP:
             return chave
     return None
+
+
+def processo_compativel_com_tribunal(tribunal_processo: str | None, tribunal_escolhido: str) -> bool:
+    """CNJ não distingue PJe (8.06) de eSAJ CE (8.06_esaj); aceita 8.06 quando o CLI é eSAJ."""
+    if not tribunal_escolhido:
+        return False
+    if tribunal_processo == tribunal_escolhido:
+        return True
+    if tribunal_escolhido == "8.06_esaj" and tribunal_processo == "8.06":
+        return True
+    return False

@@ -167,6 +167,46 @@
                                 </div>
                                 <div class="stats-badge" id="processosStats"></div>
                             </div>
+                            <div id="scrapingEtaWrap" class="scraping-eta-wrap" style="display: none;" aria-live="polite" role="status"></div>
+                            <div class="scraper-modo-wrap" id="scraperModoWrap">
+                                <p class="scraper-modo-title">Modo de raspagem</p>
+                                <div class="scraper-modo-radios">
+                                    <label class="scraper-modo-label">
+                                        <input type="radio" name="scraperModo" value="normal" checked>
+                                        <span>Scraper normal</span>
+                                        <small class="scraper-modo-hint">Fluxo na app (resultados e exportação habituais)</small>
+                                    </label>
+                                    <label class="scraper-modo-label">
+                                        <input type="radio" name="scraperModo" value="cli">
+                                        <span>Por tipo (CLI)</span>
+                                        <small class="scraper-modo-hint">Movimentações, planilhas completas ou polos — ficheiro em Minhas Extrações</small>
+                                    </label>
+                                </div>
+                                <div id="cliTipoPainel" class="cli-tipo-painel" style="display: none;">
+                                    <div class="cli-tipo-grid">
+                                        <label class="cli-field">Tribunal (CLI)
+                                            <select id="cliTribunalSelect" class="cli-select"></select>
+                                        </label>
+                                        <label class="cli-field">Navegador
+                                            <select id="cliBrowserSelect" class="cli-select">
+                                                <option value="chrome">Chrome</option>
+                                                <option value="edge">Edge</option>
+                                            </select>
+                                        </label>
+                                        <label class="cli-field">Tipo de extração
+                                            <select id="cliJobModeSelect" class="cli-select">
+                                                <option value="movimentacoes">Só movimentações</option>
+                                                <option value="planilhas">Planilha completa (raspada + tratada)</option>
+                                                <option value="polos">Polos (partes e advogados)</option>
+                                            </select>
+                                        </label>
+                                        <label class="cli-field">Workers
+                                            <input type="number" id="cliWorkersInput" class="cli-input" min="1" max="8" value="3">
+                                        </label>
+                                    </div>
+                                    <p class="cli-aviso" id="cliAvisoTexto"></p>
+                                </div>
+                            </div>
                             <div class="card-header-actions">
                                 <button id="abortarScraping" class="btn btn-danger btn-large" style="display: none;">
                                     <span class="btn-content">
@@ -196,6 +236,7 @@
                     
                     <div class="processos-container">
                         <div id="processosList" class="processos-grid"></div>
+                        <div id="processosPagination" class="processos-pagination" style="display: none;" aria-label="Paginação da lista de processos"></div>
                     </div>
                 </section>
                 

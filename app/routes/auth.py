@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify, session
 from app.services.auth_service import AuthService
+from app.services.audit_service import AuditService
 
 bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 
@@ -17,17 +18,22 @@ def login():
         session['authenticated'] = True
         session['username'] = username
         session['role'] = user_role
+        AuditService.log('auth.login.success', username=username)
         return jsonify({
             'success': True, 
             'message': 'Login realizado com sucesso',
             'role': user_role
         })
-    
+
+    AuditService.log('auth.login.failed', username=username, details={'reason': 'invalid_credentials'})
     return jsonify({'success': False, 'error': 'Usuário ou senha inválidos'}), 401
 
 @bp.route('/logout', methods=['POST'])
 def logout():
+    username = session.get('username')
     session.clear()
+    if username:
+        AuditService.log('auth.logout', username=username)
     return jsonify({'success': True, 'message': 'Logout realizado com sucesso'})
 
 @bp.route('/check', methods=['GET'])

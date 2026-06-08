@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, send_file, session
 from app.services.extracoes_service import ExtracoesService
+from app.services.audit_service import AuditService
 from app.utils.auth_decorator import login_required
-from pathlib import Path
 
 bp = Blueprint('extracoes', __name__, url_prefix='/api/extracoes')
 
@@ -30,6 +30,15 @@ def listar_extracoes():
         'total': len(extracoes_com_stats)
     })
 
+@bp.route('/resumo', methods=['GET'])
+@login_required
+def resumo_dashboard():
+    """Métricas agregadas do histórico de extrações do utilizador."""
+    username = session.get('username', '')
+    is_admin = session.get('role') == 'admin'
+    resumo = ExtracoesService.calcular_resumo_dashboard(username, is_admin)
+    return jsonify({'success': True, 'resumo': resumo})
+
 @bp.route('/download/<extracao_id>', methods=['GET'])
 @login_required
 def download_extracao(extracao_id):
@@ -45,10 +54,10 @@ def download_extracao(extracao_id):
     if not is_admin and extracao.get('username') != username:
         return jsonify({'error': 'Acesso negado'}), 403
     
-    filepath = Path(extracao.get('filepath', ''))
-    if not filepath.exists():
+    filepath = ExtracoesService.resolver_filepath_extracao(extracao)
+    if not filepath.is_file():
         return jsonify({'error': 'Arquivo não encontrado'}), 404
-    
+
     return send_file(
         str(filepath),
         as_attachment=True,
@@ -65,5 +74,10 @@ def deletar_extracao(extracao_id):
     success = ExtracoesService.deletar_extracao(extracao_id, username, is_admin)
     
     if success:
+        AuditService.log(
+            'extracao.delete',
+            username=username,
+            details={'extracao_id': extracao_id},
+        )
         return jsonify({'success': True, 'message': 'Extração removida com sucesso'})
     return jsonify({'error': 'Extração não encontrada ou sem permissão'}), 404

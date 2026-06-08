@@ -66,7 +66,7 @@ def exportar_resultados():
         downloads_path = Path.home() / 'Downloads'
         downloads_path.mkdir(exist_ok=True)
         
-        output_dir = Path('data/output')
+        output_dir = ExtracoesService.OUTPUT_DIR
         output_dir.mkdir(parents=True, exist_ok=True)
         
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -177,7 +177,7 @@ def exportar_resultados_tratados():
         downloads_path = Path.home() / 'Downloads'
         downloads_path.mkdir(exist_ok=True)
         
-        output_dir = Path('data/output')
+        output_dir = ExtracoesService.OUTPUT_DIR
         output_dir.mkdir(parents=True, exist_ok=True)
         
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')

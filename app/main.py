@@ -7,12 +7,18 @@ from logging.handlers import RotatingFileHandler
 root_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(root_dir))
 
-from flask import Flask, render_template, session, redirect, url_for
+from flask import Flask, render_template, session, redirect, url_for, send_from_directory, abort
 from flask_cors import CORS
 from dotenv import load_dotenv
-from app.utils.auth_decorator import login_required, admin_required
 
 load_dotenv()
+
+from config.settings import DATABASE_URL, DATA_DIR
+from app.extensions import db, migrate
+from app.db.bootstrap import init_database
+
+FRONTEND_DIST = root_dir / 'frontend' / 'dist'
+USE_SPA = FRONTEND_DIST.is_dir() and (FRONTEND_DIST / 'index.html').is_file()
 
 # Criar diretório de logs se não existir (com tratamento de erro)
 logs_dir = root_dir / 'logs'
@@ -59,6 +65,12 @@ CORS(app)
 app.config['UPLOAD_FOLDER'] = 'data/input'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+db.init_app(app)
+migrate.init_app(app, db)
 
 # Usar caminhos absolutos baseados no root_dir para garantir funcionamento no servidor
 app.template_folder = str(root_dir / 'templates')
@@ -67,7 +79,7 @@ app.static_url_path = '/static'
 
 # Registrar blueprints com tratamento de erro
 try:
-    from app.routes import upload, processos, resultados, auth, admin, extracoes
+    from app.routes import upload, processos, resultados, auth, admin, extracoes, dataweb
     
     app.register_blueprint(upload.bp)
     app.register_blueprint(processos.bp)
@@ -75,40 +87,81 @@ try:
     app.register_blueprint(auth.bp)
     app.register_blueprint(admin.bp)
     app.register_blueprint(extracoes.bp)
+    app.register_blueprint(dataweb.bp)
     
     logger.info("Blueprints registrados com sucesso")
 except Exception as e:
     logger.error(f"Erro ao registrar blueprints: {e}", exc_info=True)
-    # Re-raise para que o erro seja visível
     raise
 
-@app.route('/login')
+init_database(app)
+
+if USE_SPA:
+    logger.info("Frontend React detectado em frontend/dist — modo SPA ativo")
+
+
+def _serve_spa(path: str = ""):
+    """Entrega assets do build Vite ou index.html para rotas client-side."""
+    if path.startswith("api/"):
+        abort(404)
+    if path:
+        asset = FRONTEND_DIST / path
+        if asset.is_file():
+            return send_from_directory(FRONTEND_DIST, path)
+    return send_from_directory(FRONTEND_DIST, "index.html")
+
+
+@app.route("/login")
 def login():
-    if session.get('authenticated'):
-        return redirect(url_for('index'))
-    return render_template('login.html')
+    if USE_SPA:
+        if session.get("authenticated"):
+            return redirect("/")
+        return _serve_spa()
+    if session.get("authenticated"):
+        return redirect(url_for("index"))
+    return render_template("login.html")
 
-@app.route('/')
-@login_required
+
+@app.route("/")
 def index():
-    return render_template('index.html')
+    if USE_SPA:
+        return _serve_spa()
+    if not session.get("authenticated"):
+        return redirect(url_for("login"))
+    return render_template("index.html")
 
-@app.route('/admin')
-@admin_required
+
+@app.route("/admin")
 def admin_panel():
-    return render_template('admin.html')
+    if USE_SPA:
+        return _serve_spa()
+    if not session.get("authenticated"):
+        return redirect(url_for("login"))
+    if session.get("role") != "admin":
+        return redirect(url_for("index"))
+    return render_template("admin.html")
 
-# Endpoint temporário para adicionar usuário admin
-@app.route('/add-admin-temp')
-def add_admin_temp():
-    from app.services.auth_service import AuthService
-    username = 'amanda.xelian@valenca.adv.br'
-    password = 'Fenobarbital'
-    role = 'admin'
-    success, message = AuthService.add_user(username, password, role)
-    if success:
-        return f'✓ {message}<br>Usuário: {username}<br>Role: {role}'
-    return f'✗ Erro: {message}'
+
+@app.route("/extracoes")
+def extracoes_page():
+    if USE_SPA:
+        return _serve_spa()
+    return redirect(url_for("index"))
+
+
+@app.route("/assets/<path:path>")
+def spa_assets(path):
+    if USE_SPA:
+        return send_from_directory(FRONTEND_DIST / "assets", path)
+    abort(404)
+
+
+@app.route("/<path:path>")
+def spa_catch_all(path):
+    """Rotas React (ex.: /extracoes) — registado por último."""
+    if USE_SPA and not path.startswith("api/"):
+        return _serve_spa(path)
+    abort(404)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

@@ -7,9 +7,11 @@ class TransformadorDados:
 
     TRIBUNAL_ESTADO_MAP = {
         "8.19": "RJ",  # TJRJ
-        "8.06": "CE",  # TJCE
+        "8.06": "CE",  # TJCE (PJe)
+        "8.06_esaj": "CE",  # eSAJ TJCE
         "8.13": "MG",  # TJMG
         "8.17": "PE",  # TJPE
+        "8.02": "AL",  # eSAJ TJAL
         "8.26": "SP",  # eSAJ SP
         "8.10": "MA",  # TJMA
         "8.07": "DF",  # TJDFT
@@ -19,8 +21,10 @@ class TransformadorDados:
     TRIBUNAL_NOME_MAP = {
         "8.19": "TJRJ",
         "8.06": "TJCE",
+        "8.06_esaj": "eSAJ CE",
         "8.13": "TJMG",
         "8.17": "TJPE",
+        "8.02": "eSAJ AL",
         "8.26": "eSAJ SP",
         "8.10": "TJMA",
         "8.07": "TJDFT",
@@ -71,7 +75,7 @@ class TransformadorDados:
         nome_tribunal = TransformadorDados.TRIBUNAL_NOME_MAP.get(tribunal_key, "")
         estado = TransformadorDados.obter_estado_por_tribunal(tribunal_key)
         
-        if tribunal_key == "8.26":
+        if tribunal_key in ("8.26", "8.02", "8.06_esaj"):
             return f"TJ-{estado}-eSAJ-1° Grau"
         
         if nome_tribunal and estado:
@@ -207,7 +211,7 @@ class TransformadorDados:
         if resultado.get('status') != 'sucesso' or not resultado.get('dados'):
             return {}
         
-        if resultado.get('tribunal') == '8.26':
+        if resultado.get('tribunal') in ('8.26', '8.02', '8.06_esaj'):
             resultado = TransformadorESAJ.normalizar_resultado(resultado)
         
         dados = resultado['dados']

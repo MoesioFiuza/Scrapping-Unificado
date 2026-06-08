@@ -1,5 +1,7 @@
 from flask import Blueprint, request, jsonify, render_template, session
 from app.services.auth_service import AuthService
+from app.services.audit_service import AuditService
+from app.services.job_service import JobService
 from app.utils.auth_decorator import admin_required
 from app.routes.processos import get_scraping_sessions_snapshot
 
@@ -40,6 +42,11 @@ def add_user():
     
     success, message = AuthService.add_user(username, password, role)
     if success:
+        AuditService.log(
+            'admin.user.create',
+            username=current_username,
+            details={'target': username, 'role': role},
+        )
         return jsonify({'success': True, 'message': message})
     return jsonify({'success': False, 'error': message}), 400
 
@@ -57,6 +64,11 @@ def delete_user(username):
     
     success, message = AuthService.delete_user(username)
     if success:
+        AuditService.log(
+            'admin.user.delete',
+            username=current_username,
+            details={'target': username},
+        )
         return jsonify({'success': True, 'message': message})
     return jsonify({'success': False, 'error': message}), 404
 
@@ -86,6 +98,11 @@ def update_user_role(username):
     
     success, message = AuthService.update_user_role(username, new_role)
     if success:
+        AuditService.log(
+            'admin.user.role',
+            username=current_username,
+            details={'target': username, 'role': new_role},
+        )
         return jsonify({'success': True, 'message': message})
     return jsonify({'success': False, 'error': message}), 404
 
@@ -101,6 +118,7 @@ def scraping_status():
     
     # Obter snapshot das sessões (cópia, não referencia)
     scraping_sessions = get_scraping_sessions_snapshot()
+    cli_ativos = JobService.list_active_cli_jobs()
     
     # Contar sessões ativas
     sessoes_ativas = []
@@ -161,9 +179,10 @@ def scraping_status():
     
     return jsonify({
         'success': True,
-        'tem_extracao_ativa': len(sessoes_ativas) > 0,
-        'total_sessoes_ativas': len(sessoes_ativas),
+        'tem_extracao_ativa': len(sessoes_ativas) > 0 or len(cli_ativos) > 0,
+        'total_sessoes_ativas': len(sessoes_ativas) + len(cli_ativos),
         'sessoes_ativas': sessoes_ativas,
+        'jobs_cli_ativos': cli_ativos,
         'resumo': {
             'total_processos_em_fila': total_processos_em_fila,
             'total_processos_processando': total_processos_processando,
@@ -171,3 +190,12 @@ def scraping_status():
             'total_processos': total_processos_em_fila + total_processos_processando + total_processos_concluidos
         }
     })
+
+
+@bp.route('/audit-logs', methods=['GET'])
+@admin_required
+def audit_logs():
+    limit = int(request.args.get('limit', 50))
+    offset = int(request.args.get('offset', 0))
+    logs, total = AuditService.list_logs(limit=limit, offset=offset)
+    return jsonify({'success': True, 'logs': logs, 'total': total})

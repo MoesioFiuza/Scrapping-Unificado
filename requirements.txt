@@ -1,8 +1,13 @@
 Flask==3.0.0
 flask-cors==4.0.0
+Flask-SQLAlchemy==3.1.1
+Flask-Migrate==4.0.7
+SQLAlchemy==2.0.36
+psycopg2-binary==2.9.10
 pandas==2.1.4
 openpyxl==3.1.2
 selenium==4.15.2
 python-dotenv==1.0.0
 webdriver-manager==4.0.1
 beautifulsoup4==4.12.2
+requests==2.31.0

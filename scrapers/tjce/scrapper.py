@@ -72,6 +72,50 @@ class PJeScraperTJCE(BaseScraper):
             print(traceback.format_exc())
             raise
     
+    def _obter_campo_numero_processo_consulta(self, campo_id: str, max_tentativas: int = 3):
+        """
+        Garante o input da consulta pública com retentativas (PJe/JSF demora ou falha sob carga).
+        Cada tentativa: espera por id, depois por name — ambas com WebDriverWait (evita find_element seco).
+        """
+        wait_id_s = 12
+        wait_name_s = 10
+        campo = None
+        ultimo = None
+        for tentativa in range(1, max_tentativas + 1):
+            if tentativa == 1:
+                print(f"Acessando: {self.url_consulta}")
+                self.driver.get(self.url_consulta)
+                time.sleep(2)
+            else:
+                print(
+                    f"Campo de número não disponível — tentativa {tentativa}/{max_tentativas} "
+                    f"(novo carregamento de {self.url_consulta})"
+                )
+                try:
+                    self.driver.get(self.url_consulta)
+                except Exception as e:
+                    print(f"Aviso ao recarregar consulta: {e}")
+                time.sleep(1.2 + 0.3 * tentativa)
+            print(f"Procurando campo: {campo_id}")
+            try:
+                campo = WebDriverWait(self.driver, wait_id_s).until(
+                    EC.presence_of_element_located((By.ID, campo_id))
+                )
+                print("Campo encontrado (id)!")
+                break
+            except TimeoutException as e1:
+                ultimo = e1
+                try:
+                    campo = WebDriverWait(self.driver, wait_name_s).until(
+                        EC.presence_of_element_located((By.NAME, campo_id))
+                    )
+                    print("Campo encontrado (name)!")
+                    break
+                except TimeoutException as e2:
+                    ultimo = e2
+                    print("Campo não encontrado (id e name) nesta tentativa.")
+        return campo, ultimo
+    
     def raspar_processo(self, numero_processo: str) -> dict:
         print(f"Iniciando scraping do processo: {numero_processo}")
         
@@ -86,21 +130,19 @@ class PJeScraperTJCE(BaseScraper):
             aba_principal = self.driver.window_handles[0] if self.driver.window_handles else None
         
         try:
-            print(f"Acessando: {self.url_consulta}")
-            self.driver.get(self.url_consulta)
-            time.sleep(3)
-            
             campo_processo_id = "fPP:numProcesso-inputNumeroProcessoDecoration:numProcesso-inputNumeroProcesso"
-            print(f"Procurando campo: {campo_processo_id}")
-            
-            try:
-                campo_processo = WebDriverWait(self.driver, 15).until(
-                    EC.presence_of_element_located((By.ID, campo_processo_id))
+            campo_processo, _ult = self._obter_campo_numero_processo_consulta(campo_processo_id)
+            if not campo_processo:
+                msg = (
+                    "Campo de número do processo não encontrado na consulta pública após várias tentativas "
+                    "(página lenta, instabilidade do PJe ou layout diferente)."
                 )
-                print("Campo encontrado!")
-            except TimeoutException:
-                print("Campo não encontrado! Tentando alternativa...")
-                campo_processo = self.driver.find_element(By.NAME, campo_processo_id)
+                print(msg)
+                return {
+                    "sucesso": False,
+                    "numero_processo": numero_processo,
+                    "erro": msg,
+                }
             
             campo_processo.clear()
             campo_processo.send_keys(numero_processo)

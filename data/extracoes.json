@@ -116,6 +116,222 @@
       "data_criacao": "2026-03-08T10:21:25.390288",
       "total_processos": 4,
       "filepath": "data\\output\\resultados_tratados_20260308_102125.xlsx"
+    },
+    {
+      "id": "1776286478.136637",
+      "username": "moesio.fiuza@valenca.adv.br",
+      "filename": "resultados_tratados_20260415_175437.xlsx",
+      "tipo": "tratado",
+      "data_criacao": "2026-04-15T17:54:38.136641",
+      "total_processos": 115,
+      "filepath": "data\\output\\resultados_tratados_20260415_175437.xlsx"
+    },
+    {
+      "id": "1776287203.827529",
+      "username": "moesio.fiuza@valenca.adv.br",
+      "filename": "resultados_tratados_20260415_180643.xlsx",
+      "tipo": "tratado",
+      "data_criacao": "2026-04-15T18:06:43.827532",
+      "total_processos": 2,
+      "filepath": "data\\output\\resultados_tratados_20260415_180643.xlsx"
+    },
+    {
+      "id": "1776287224.618133",
+      "username": "moesio.fiuza@valenca.adv.br",
+      "filename": "resultados_raspados_20260415_180704.xlsx",
+      "tipo": "raspado",
+      "data_criacao": "2026-04-15T18:07:04.618137",
+      "total_processos": 4,
+      "filepath": "data\\output\\resultados_raspados_20260415_180704.xlsx"
+    },
+    {
+      "id": "1776290181.283106",
+      "username": "moesio.fiuza@valenca.adv.br",
+      "filename": "resultados_raspados_20260415_185621.xlsx",
+      "tipo": "raspado",
+      "data_criacao": "2026-04-15T18:56:21.283111",
+      "total_processos": 199,
+      "filepath": "data\\output\\resultados_raspados_20260415_185621.xlsx"
+    },
+    {
+      "id": "1776290583.449487",
+      "username": "moesio.fiuza@valenca.adv.br",
+      "filename": "resultados_tratados_20260415_190302.xlsx",
+      "tipo": "tratado",
+      "data_criacao": "2026-04-15T19:03:03.449491",
+      "total_processos": 223,
+      "filepath": "data\\output\\resultados_tratados_20260415_190302.xlsx"
+    },
+    {
+      "id": "1776290605.574885",
+      "username": "moesio.fiuza@valenca.adv.br",
+      "filename": "resultados_tratados_20260415_190324.xlsx",
+      "tipo": "tratado",
+      "data_criacao": "2026-04-15T19:03:25.574889",
+      "total_processos": 223,
+      "filepath": "data\\output\\resultados_tratados_20260415_190324.xlsx"
+    },
+    {
+      "id": "1776290618.28521",
+      "username": "moesio.fiuza@valenca.adv.br",
+      "filename": "resultados_raspados_20260415_190338.xlsx",
+      "tipo": "raspado",
+      "data_criacao": "2026-04-15T19:03:38.285213",
+      "total_processos": 223,
+      "filepath": "data\\output\\resultados_raspados_20260415_190338.xlsx"
+    },
+    {
+      "id": "1778201213.468104",
+      "username": "amanda.xelian@valenca.adv.br",
+      "filename": "TJRJ_chrome_raspado_3e7da6d16c.xlsx",
+      "tipo": "raspado_cli",
+      "data_criacao": "2026-05-07T21:46:53.468107",
+      "total_processos": 2,
+      "filepath": "data\\output\\TJRJ_chrome_raspado_3e7da6d16c.xlsx"
+    },
+    {
+      "id": "1778201213.474309",
+      "username": "amanda.xelian@valenca.adv.br",
+      "filename": "TJRJ_chrome_tratado_3e7da6d16c.xlsx",
+      "tipo": "tratado_cli",
+      "data_criacao": "2026-05-07T21:46:53.474315",
+      "total_processos": 2,
+      "filepath": "data\\output\\TJRJ_chrome_tratado_3e7da6d16c.xlsx"
+    },
+    {
+      "id": "1778201569.619561",
+      "username": "amanda.xelian@valenca.adv.br",
+      "filename": "TJRJ_chrome_raspado_4c3284d572.xlsx",
+      "tipo": "raspado_cli",
+      "data_criacao": "2026-05-07T21:52:49.619564",
+      "total_processos": 2,
+      "filepath": "data/output/TJRJ_chrome_raspado_4c3284d572.xlsx"
+    },
+    {
+      "id": "1778201569.62568",
+      "username": "amanda.xelian@valenca.adv.br",
+      "filename": "TJRJ_chrome_tratado_4c3284d572.xlsx",
+      "tipo": "tratado_cli",
+      "data_criacao": "2026-05-07T21:52:49.625684",
+      "total_processos": 2,
+      "filepath": "data/output/TJRJ_chrome_tratado_4c3284d572.xlsx"
+    },
+    {
+      "id": "1778202886.876389",
+      "username": "amanda.xelian@valenca.adv.br",
+      "filename": "TJRJ_chrome_raspado_559c302d20.xlsx",
+      "tipo": "raspado_cli",
+      "data_criacao": "2026-05-07T22:14:46.876392",
+      "total_processos": 65,
+      "filepath": "data/output/TJRJ_chrome_raspado_559c302d20.xlsx"
+    },
+    {
+      "id": "1778202886.882769",
+      "username": "amanda.xelian@valenca.adv.br",
+      "filename": "TJRJ_chrome_tratado_559c302d20.xlsx",
+      "tipo": "tratado_cli",
+      "data_criacao": "2026-05-07T22:14:46.882772",
+      "total_processos": 65,
+      "filepath": "data/output/TJRJ_chrome_tratado_559c302d20.xlsx"
+    },
+    {
+      "id": "1779886674.675065",
+      "username": "moesio.fiuza@valenca.adv.br",
+      "filename": "eSAJ_CE_chrome_movimentacoes_5f66fc1ba6.xlsx",
+      "tipo": "movimentacoes_cli",
+      "data_criacao": "2026-05-27T09:57:54.675069",
+      "total_processos": 13,
+      "filepath": "data/output/eSAJ_CE_chrome_movimentacoes_5f66fc1ba6.xlsx"
+    },
+    {
+      "id": "1779887165.762228",
+      "username": "moesio.fiuza@valenca.adv.br",
+      "filename": "TJCE_chrome_movimentacoes_f9775f0584.xlsx",
+      "tipo": "movimentacoes_cli",
+      "data_criacao": "2026-05-27T10:06:05.762232",
+      "total_processos": 16,
+      "filepath": "data/output/TJCE_chrome_movimentacoes_f9775f0584.xlsx"
+    },
+    {
+      "id": "1780944754.254236",
+      "username": "moesio.fiuza@valenca.adv.br",
+      "filename": "TJRJ_chrome_raspado_a6d7fd763a.xlsx",
+      "tipo": "raspado_cli",
+      "data_criacao": "2026-06-08T15:52:34.254240",
+      "total_processos": 65,
+      "filepath": "data/output/TJRJ_chrome_raspado_a6d7fd763a.xlsx"
+    },
+    {
+      "id": "1780944754.261482",
+      "username": "moesio.fiuza@valenca.adv.br",
+      "filename": "TJRJ_chrome_tratado_a6d7fd763a.xlsx",
+      "tipo": "tratado_cli",
+      "data_criacao": "2026-06-08T15:52:34.261485",
+      "total_processos": 65,
+      "filepath": "data/output/TJRJ_chrome_tratado_a6d7fd763a.xlsx"
+    },
+    {
+      "id": "1780946667.905299",
+      "username": "moesio.fiuza@valenca.adv.br",
+      "filename": "resultados_tratados_20260608_162427.xlsx",
+      "tipo": "tratado",
+      "data_criacao": "2026-06-08T16:24:27.905302",
+      "total_processos": 2,
+      "filepath": "data/output/resultados_tratados_20260608_162427.xlsx"
+    },
+    {
+      "id": "1780948640.035022",
+      "username": "moesio.fiuza@valenca.adv.br",
+      "filename": "TJRJ_chrome_raspado_6a3d1f9cbb.xlsx",
+      "tipo": "raspado_cli",
+      "data_criacao": "2026-06-08T16:57:20.035026",
+      "total_processos": 2,
+      "filepath": "data/output/TJRJ_chrome_raspado_6a3d1f9cbb.xlsx"
+    },
+    {
+      "id": "1780948640.042102",
+      "username": "moesio.fiuza@valenca.adv.br",
+      "filename": "TJRJ_chrome_tratado_6a3d1f9cbb.xlsx",
+      "tipo": "tratado_cli",
+      "data_criacao": "2026-06-08T16:57:20.042106",
+      "total_processos": 2,
+      "filepath": "data/output/TJRJ_chrome_tratado_6a3d1f9cbb.xlsx"
+    },
+    {
+      "id": "1780949032.308093",
+      "username": "moesio.fiuza@valenca.adv.br",
+      "filename": "TJRJ_chrome_raspado_1424080ec9.xlsx",
+      "tipo": "raspado_cli",
+      "data_criacao": "2026-06-08T17:03:52.308096",
+      "total_processos": 2,
+      "filepath": "data/output/TJRJ_chrome_raspado_1424080ec9.xlsx"
+    },
+    {
+      "id": "1780949032.315409",
+      "username": "moesio.fiuza@valenca.adv.br",
+      "filename": "TJRJ_chrome_tratado_1424080ec9.xlsx",
+      "tipo": "tratado_cli",
+      "data_criacao": "2026-06-08T17:03:52.315412",
+      "total_processos": 2,
+      "filepath": "data/output/TJRJ_chrome_tratado_1424080ec9.xlsx"
+    },
+    {
+      "id": "1780949706.194174",
+      "username": "moesio.fiuza@valenca.adv.br",
+      "filename": "dataweb_20260608_171506.xlsx",
+      "tipo": "dataweb",
+      "data_criacao": "2026-06-08T17:15:06.194178",
+      "total_processos": 8,
+      "filepath": "data/output/dataweb_20260608_171506.xlsx"
+    },
+    {
+      "id": "1780949853.167332",
+      "username": "moesio.fiuza@valenca.adv.br",
+      "filename": "dataweb_20260608_171733.xlsx",
+      "tipo": "dataweb",
+      "data_criacao": "2026-06-08T17:17:33.167336",
+      "total_processos": 150,
+      "filepath": "data/output/dataweb_20260608_171733.xlsx"
     }
   ]
 }

@@ -1,9 +1,9 @@
 from flask import Blueprint, request, jsonify
 import pandas as pd
-import os
 from werkzeug.utils import secure_filename
 from config.tribunais import identificar_tribunal_por_processo
 from app.utils.auth_decorator import login_required
+from app.services.extracoes_service import ExtracoesService
 
 bp = Blueprint('upload', __name__, url_prefix='/api')
 
@@ -24,8 +24,9 @@ def upload_file():
     
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
-        filepath = os.path.join('data/input', filename)
-        os.makedirs('data/input', exist_ok=True)
+        input_dir = ExtracoesService.INPUT_DIR
+        input_dir.mkdir(parents=True, exist_ok=True)
+        filepath = str(input_dir / filename)
         file.save(filepath)
         
         try:
