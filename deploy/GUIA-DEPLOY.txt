@@ -1,0 +1,309 @@
+================================================================================
+Guia completo — Deploy e atualização Scraper Unificado (Contabo)
+(Mesmo servidor do DataWeb — padrão /opt/apps/)
+================================================================================
+
+DADOS DO SERVIDOR
+-----------------
+IP:           212.47.68.222
+Usuário:      root
+Pasta:        /opt/apps/scraper/repo
+Branch:       development
+Repositório:  https://github.com/MoesioFiuza/Scrapper-Unificado.git   (ajuste)
+
+URL front:    http://212.47.68.222/scraper/
+URL API:      http://212.47.68.222/scraper/api/
+Health:       http://212.47.68.222/scraper/api/health
+DataWeb:      http://212.47.68.222/dataweb/   (já existente — não alterar)
+
+PORTA INTERNA (Gunicorn): 8001
+(DataWeb usa Docker na 5267 — são serviços separados)
+
+================================================================================
+MAPA: O QUE REAPROVEITAR DO GUIA DATAWEB
+================================================================================
+
+  DataWeb                          →  Scraper Unificado
+  ─────────────────────────────────────────────────────────────────
+  PARTE 1  git push no PC           →  Igual (Parte 1 abaixo)
+  PARTE 2  ssh root@212.47.68.222  →  Igual
+  PARTE 3  git pull + docker build  →  git pull + pip + systemctl (Parte 3)
+  PARTE 4  nginx dataweb.conf       →  nginx scraper.conf (Parte 4) — ADICIONAR, não substituir
+  PARTE 5  curl health             →  curl :8001/api/health (Parte 5)
+  PARTE 8  docker compose logs      →  journalctl -u scraper (Parte 8)
+  PARTE 9  docker restart          →  systemctl restart scraper (Parte 9)
+  PARTE 10 primeiro clone           →  Parte 10 abaixo
+  PARTE 11 Docker                   →  NÃO obrigatório (Scraper usa Python nativo)
+  PARTE 12 Nginx                    →  Já tens — só incluir scraper (Parte 4)
+  PARTE 13 UFW                      →  Igual — portas 22/80 já abertas
+  PARTE 14/15 local                 →  python run.py + npm run dev (Parte 14)
+
+================================================================================
+PARTE 1 — NO SEU PC (POWERSHELL) — ENVIAR CÓDIGO PARA O GITHUB
+================================================================================
+
+cd "C:\Users\Moésio\Desktop\Scrapper Unificado"
+
+# Build frontend com base /scraper/ (obrigatório antes do deploy)
+cd frontend
+npm run build
+cd ..
+
+git status
+git add .
+git commit -m "Descrição da alteração"
+git push origin development
+
+================================================================================
+PARTE 2 — CONECTAR NO SERVIDOR
+================================================================================
+
+ssh root@212.47.68.222
+
+================================================================================
+PARTE 3 — ATUALIZAR NO SERVIDOR (COMANDOS COMPLETOS)
+================================================================================
+
+cd /opt/apps/scraper/repo
+
+git fetch origin
+git checkout development
+git pull origin development
+
+./venv/bin/pip install -r requirements.txt
+
+# Reiniciar app
+systemctl restart scraper
+systemctl status scraper
+
+# Health directo (Gunicorn)
+curl http://127.0.0.1:8001/api/health
+
+# Health via Nginx (como /dataweb/health)
+curl http://127.0.0.1/scraper/api/health
+
+--- RESUMO RÁPIDO (copiar tudo de uma vez) ---
+
+cd /opt/apps/scraper/repo && git pull origin development && ./venv/bin/pip install -r requirements.txt -q && systemctl restart scraper && curl http://127.0.0.1:8001/api/health
+
+--- OU usar script ---
+
+bash deploy/update-server.sh
+
+================================================================================
+PARTE 4 — NGINX (ADICIONAR SCRAPER SEM MEXER NO DATAWEB)
+================================================================================
+
+# Opção A — ficheiro separado (recomendado se dataweb já tem o seu site)
+cp /opt/apps/scraper/repo/deploy/nginx/scraper.conf /etc/nginx/sites-available/scraper
+ln -sf /etc/nginx/sites-available/scraper /etc/nginx/sites-enabled/scraper
+
+# Opção B — só o bloco location dentro do server existente do DataWeb
+# cp deploy/nginx-scraper.conf → incluir locations no dataweb.conf
+
+nginx -t
+systemctl reload nginx
+
+IMPORTANTE: DataWeb e Scraper coexistem:
+  /dataweb/  → Docker :5267
+  /scraper/  → Gunicorn :8001
+
+================================================================================
+PARTE 5 — TESTES NO SERVIDOR
+================================================================================
+
+# Health interno
+curl http://127.0.0.1:8001/api/health
+
+# Health via Nginx
+curl http://127.0.0.1/scraper/api/health
+
+# Login (substitua email/senha)
+curl -X POST http://127.0.0.1:8001/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"seu@email.com","password":"sua_senha"}'
+
+# DataWeb health (já existente — confirmar que Scraper consegue falar com DataWeb)
+curl http://212.47.68.222/dataweb/health
+
+================================================================================
+PARTE 6 — TESTE NO NAVEGADOR
+================================================================================
+
+http://212.47.68.222/scraper/
+http://212.47.68.222/scraper/login
+http://212.47.68.222/scraper/api/health
+http://212.47.68.222/dataweb/          (DataWeb — continua igual)
+
+================================================================================
+PARTE 7 — TESTE NO SEU PC (POWERSHELL)
+================================================================================
+
+# Health
+Invoke-RestMethod -Uri "http://212.47.68.222/scraper/api/health"
+
+# Abrir no browser
+Start-Process "http://212.47.68.222/scraper/"
+
+================================================================================
+PARTE 8 — VER LOGS
+================================================================================
+
+# App (equivalente a docker compose logs)
+journalctl -u scraper -f
+journalctl -u scraper --tail 100
+
+# Gunicorn
+tail -f /opt/apps/scraper/repo/logs/gunicorn-error.log
+tail -f /opt/apps/scraper/repo/logs/app.log
+
+# DataWeb (continua igual)
+cd /opt/apps/dataweb/repo/infra && docker compose logs -f
+
+================================================================================
+PARTE 9 — COMANDOS ÚTEIS DO SERVIÇO
+================================================================================
+
+systemctl status scraper
+systemctl restart scraper
+systemctl stop scraper
+systemctl start scraper
+systemctl enable scraper
+
+================================================================================
+PARTE 10 — PRIMEIRO DEPLOY (CLONAR DE NOVO)
+================================================================================
+
+mkdir -p /opt/apps/scraper
+cd /opt/apps/scraper
+
+git clone -b development https://github.com/MoesioFiuza/Scrapper-Unificado.git repo
+
+cd repo
+
+# Python
+python3 -m venv venv
+./venv/bin/pip install -r requirements.txt
+
+# PostgreSQL (utilizador e base)
+sudo -u postgres psql -c "CREATE USER scraper WITH PASSWORD 'SUA_SENHA';" 2>/dev/null || true
+sudo -u postgres psql -c "CREATE DATABASE scraper_unificado OWNER scraper;" 2>/dev/null || true
+
+# .env
+cp deploy/env.production.example .env
+nano .env   # SECRET_KEY, DATABASE_URL, etc.
+
+# Chrome headless (scraping)
+apt update
+apt install -y google-chrome-stable chromium-chromedriver
+
+# Frontend — build no PC e push, OU no servidor se tiver node:
+cd frontend && npm ci && npm run build && cd ..
+
+# Migrar users.json legado (se existir)
+./venv/bin/python scripts/migrate_json_to_db.py
+
+# Systemd
+cp deploy/scraper.service /etc/systemd/system/scraper.service
+systemctl daemon-reload
+systemctl enable scraper
+systemctl start scraper
+
+# Nginx
+cp deploy/nginx/scraper.conf /etc/nginx/sites-available/scraper
+ln -sf /etc/nginx/sites-available/scraper /etc/nginx/sites-enabled/scraper
+nginx -t && systemctl reload nginx
+
+# Testar
+curl http://127.0.0.1:8001/api/health
+curl http://212.47.68.222/scraper/api/health
+
+================================================================================
+PARTE 11 — DOCKER
+================================================================================
+
+O DataWeb usa Docker. O Scraper NÃO precisa de Docker para rodar —
+usa Gunicorn + systemd (melhor para Selenium/Chrome no host).
+
+Se quiser PostgreSQL em Docker (opcional), pode reutilizar a infra
+do servidor, mas o guia assume PostgreSQL nativo na 5432.
+
+================================================================================
+PARTE 12 — NGINX / FIREWALL
+================================================================================
+
+Já configurados no deploy do DataWeb (Partes 12–13 do guia DataWeb).
+Só adicionar o site/bloco scraper (Parte 4 acima).
+Portas 22 e 80 já devem estar abertas no UFW.
+
+================================================================================
+PARTE 13 — RODAR LOCAL NO PC (DESENVOLVIMENTO)
+================================================================================
+
+Terminal 1 — Flask:
+cd "C:\Users\Moésio\Desktop\Scrapper Unificado"
+python run.py
+
+Terminal 2 — React (sem subpath /scraper/):
+cd frontend
+npm run dev
+
+Acessar: http://localhost:5173
+
+Para simular produção local com /scraper/:
+  frontend\.env.production → VITE_BASE_PATH=/scraper/
+  npm run build
+  APPLICATION_ROOT=/scraper FLASK_ENV=production python run.py
+
+================================================================================
+PARTE 14 — INTEGRAÇÃO DATAWEB (JÁ NO CÓDIGO)
+================================================================================
+
+O Scraper chama o DataWeb pelo .env:
+  DATAWEB_BASE_URL=http://212.47.68.222/dataweb
+
+Equivalente ao curl que já usas:
+  POST http://212.47.68.222/dataweb/api/v1/processar
+
+Na UI: aba "DataWeb" após upload da planilha de CNJs.
+
+================================================================================
+SE DER ERRO
+================================================================================
+
+Serviço não sobe:
+  journalctl -u scraper --tail 100
+  ./venv/bin/gunicorn --bind 127.0.0.1:8001 wsgi:app   # testar manual
+
+502 Bad Gateway no /scraper/:
+  systemctl status scraper
+  curl http://127.0.0.1:8001/api/health
+
+Nginx:
+  nginx -t
+  systemctl status nginx
+
+Git conflito:
+  cd /opt/apps/scraper/repo
+  git status
+  git stash
+  git pull origin development
+
+Frontend sem CSS/JS (404 em /scraper/assets/):
+  cd frontend && npm run build && git add dist && commit/push
+  ou rebuild no servidor
+
+Scraping falha no servidor:
+  google-chrome --version
+  chromedriver --version
+  HEADLESS_MODE=True no .env
+
+================================================================================
+RESUMO RÁPIDO — ATUALIZAR (COPIAR TUDO DE UMA VEZ NO SERVIDOR)
+================================================================================
+
+cd /opt/apps/scraper/repo && git fetch origin && git checkout development && git pull origin development && ./venv/bin/pip install -r requirements.txt -q && systemctl restart scraper && curl http://127.0.0.1:8001/api/health
+
+================================================================================
+FIM
+================================================================================

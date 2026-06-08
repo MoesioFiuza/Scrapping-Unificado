@@ -4,7 +4,7 @@
 set -euo pipefail
 
 REMOTE="${1:-root@212.47.68.222}"
-APP_DIR="/opt/scraper-unificado"
+APP_DIR="/opt/apps/scraper/repo"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 echo "==> Build frontend (produção /scraper/)"
@@ -23,10 +23,12 @@ rsync -avz --delete \
     --exclude '.vs' \
     "$ROOT/" "${REMOTE}:${APP_DIR}/"
 
-echo "==> Instalar dependências e reiniciar"
+echo "==> Atualizar no servidor (git pull development)"
 ssh "$REMOTE" "cd ${APP_DIR} && \
+    git fetch origin && git checkout development && git pull origin development && \
     ./venv/bin/pip install -r requirements.txt -q && \
     systemctl restart scraper && \
-    systemctl status scraper --no-pager"
+    systemctl status scraper --no-pager && \
+    curl -sf http://127.0.0.1:8001/api/health"
 
 echo "OK — http://212.47.68.222/scraper/"

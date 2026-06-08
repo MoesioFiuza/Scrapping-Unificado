@@ -1,21 +1,21 @@
 [Unit]
 Description=Scraper Unificado (Gunicorn)
-After=network.target postgresql.service
+After=network.target postgresql.service docker.service
 Wants=postgresql.service
 
 [Service]
 Type=simple
 User=www-data
 Group=www-data
-WorkingDirectory=/opt/scraper-unificado
-EnvironmentFile=/opt/scraper-unificado/.env
+WorkingDirectory=/opt/apps/scraper/repo
+EnvironmentFile=/opt/apps/scraper/repo/.env
 Environment=PYTHONUNBUFFERED=1
-ExecStart=/opt/scraper-unificado/venv/bin/gunicorn \
+ExecStart=/opt/apps/scraper/repo/venv/bin/gunicorn \
     --bind 127.0.0.1:8001 \
     --workers 2 \
     --timeout 620 \
-    --access-logfile /opt/scraper-unificado/logs/gunicorn-access.log \
-    --error-logfile /opt/scraper-unificado/logs/gunicorn-error.log \
+    --access-logfile /opt/apps/scraper/repo/logs/gunicorn-access.log \
+    --error-logfile /opt/apps/scraper/repo/logs/gunicorn-error.log \
     wsgi:app
 Restart=always
 RestartSec=5

@@ -4,7 +4,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-APP_DIR="${APP_DIR:-/opt/scraper-unificado}"
+APP_DIR="${APP_DIR:-/opt/apps/scraper/repo}"
 APP_USER="${APP_USER:-www-data}"
 
 echo "==> Instalação: origem ${ROOT} → ${APP_DIR}"
