@@ -3,6 +3,7 @@ import type {
   CliJobMode,
   CliJobStatus,
   CliOpcoes,
+  DashboardEscritorio,
   DashboardResumo,
   DataWebProcessarResponse,
   Extracao,
@@ -182,6 +183,10 @@ export const api = {
     auditLogs: (limit = 50, offset = 0) =>
       request<{ success: boolean; logs: AuditLogEntry[]; total: number }>(
         `/api/admin/audit-logs?limit=${limit}&offset=${offset}`,
+      ),
+    dashboardEscritorio: (diasTaxa = 30) =>
+      request<DashboardEscritorio>(
+        `/api/admin/dashboard-escritorio?dias_taxa=${diasTaxa}`,
       ),
   },
 }

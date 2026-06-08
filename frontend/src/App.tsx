@@ -8,6 +8,7 @@ import { LoginPage } from '@/pages/LoginPage'
 import { ScraperPage } from '@/pages/ScraperPage'
 import { ExtracoesPage } from '@/pages/ExtracoesPage'
 import { AdminPage } from '@/pages/AdminPage'
+import { DashboardEscritorioPage } from '@/pages/DashboardEscritorioPage'
 import { BASE_PATH } from '@/lib/paths'
 
 const queryClient = new QueryClient({
@@ -35,6 +36,14 @@ export function App() {
             >
               <Route index element={<ScraperPage />} />
               <Route path="extracoes" element={<ExtracoesPage />} />
+              <Route
+                path="admin/dashboard"
+                element={
+                  <ProtectedRoute adminOnly>
+                    <DashboardEscritorioPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="admin"
                 element={
