@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify, render_template, session
 from app.services.auth_service import AuthService
 from app.services.audit_service import AuditService
+from app.services.dashboard_escritorio_service import DashboardEscritorioService
 from app.services.job_service import JobService
 from app.utils.auth_decorator import admin_required
 from app.routes.processos import get_scraping_sessions_snapshot
@@ -105,6 +106,15 @@ def update_user_role(username):
         )
         return jsonify({'success': True, 'message': message})
     return jsonify({'success': False, 'error': message}), 404
+
+@bp.route('/dashboard-escritorio', methods=['GET'])
+@admin_required
+def dashboard_escritorio():
+    """Painel de métricas do escritório (todos os admins)."""
+    dias = int(request.args.get('dias_taxa', 30))
+    payload = DashboardEscritorioService.build(dias_taxa=dias)
+    return jsonify({'success': True, **payload})
+
 
 @bp.route('/scraping-status', methods=['GET'])
 @admin_required

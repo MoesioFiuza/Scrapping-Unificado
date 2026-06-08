@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { Loader2, UserPlus, Trash2, Activity, Users, CheckCircle2, ListOrdered, ScrollText } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Loader2, UserPlus, Trash2, Activity, Users, CheckCircle2, ListOrdered, ScrollText, BarChart3 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -87,6 +88,14 @@ export function AdminPage() {
       <TopBar
         title="Administração"
         subtitle="Gestão de utilizadores e monitorização de extrações activas."
+        actions={
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/admin/dashboard">
+              <BarChart3 className="h-4 w-4" />
+              Dashboard Escritório
+            </Link>
+          </Button>
+        }
       />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

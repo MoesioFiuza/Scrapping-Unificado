@@ -95,6 +95,74 @@ export interface DashboardResumo {
   extracoes_app: number
 }
 
+export interface DashboardPeriodoStats {
+  extracoes: number
+  processos: number
+  jobs_concluidos: number
+}
+
+export interface DashboardTribunalRank {
+  codigo: string
+  nome: string
+  extracoes: number
+  processos: number
+}
+
+export interface DashboardTaxaTribunal {
+  codigo: string
+  nome: string
+  sucesso: number
+  erro: number
+  taxa_pct: number
+}
+
+export interface DashboardUsuarioAtivo {
+  username: string
+  extracoes_mes: number
+  processos_mes: number
+  ultima_extracao: string | null
+  ultimo_login: string | null
+}
+
+export interface DashboardEscritorio {
+  success: boolean
+  gerado_em: string
+  dias_taxa_sucesso: number
+  periodos: {
+    hoje: DashboardPeriodoStats
+    semana: DashboardPeriodoStats
+    mes: DashboardPeriodoStats
+  }
+  taxa_sucesso_global: {
+    sucesso: number
+    erro: number
+    taxa_pct: number | null
+  }
+  top_tribunais: DashboardTribunalRank[]
+  taxa_sucesso_por_tribunal: DashboardTaxaTribunal[]
+  utilizadores_ativos: DashboardUsuarioAtivo[]
+  jobs_em_curso: {
+    scraping: {
+      session_id: string
+      username: string
+      status: string
+      processos_em_fila: number
+      processos_processando: number
+      processos_concluidos: number
+      total_processos: number
+    }[]
+    cli: {
+      job_id: string
+      username: string
+      status: string
+      tribunal_key: string
+      job_mode: string
+      total_processos: number
+    }[]
+  }
+  total_jobs_ativos: number
+}
+
 export interface DataWebProcessarResponse {
   success: boolean
   extracao_id?: string
