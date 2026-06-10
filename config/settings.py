@@ -25,19 +25,10 @@ ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', '').strip().lower()
 ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', '')
 
 def get_chromedriver_path():
-    """Obtém o caminho do ChromeDriver, retornando None se não encontrar um válido"""
-    # 1. Tentar usar o caminho do .env se existir
+    """Caminho explícito do ChromeDriver (.env). None → webdriver-manager nos scrapers."""
     env_path = os.getenv('CHROME_DRIVER_PATH')
     if env_path and os.path.exists(env_path):
         return env_path
-    
-    # 2. Tentar caminho padrão do Windows (só se existir)
-    if os.name == 'nt':  # Windows
-        default_path = r'C:\Users\Moésio\Desktop\Nova Scrapper\chromedriver.exe'
-        if os.path.exists(default_path):
-            return default_path
-    
-    # 3. Retornar None - os scrapers usarão webdriver-manager como fallback
     return None
 
 

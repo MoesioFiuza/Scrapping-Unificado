@@ -18,9 +18,9 @@ class PJeScraperTJCE(BaseScraper):
         self.headless = config.get('headless', False)
     
     def setup_driver(self):
-        from selenium.webdriver.chrome.service import Service
         from selenium.webdriver.chrome.options import Options
-        
+        from scrapers.driver_utils import create_chrome_driver
+
         try:
             chrome_options = Options()
             use_headless = self.headless or HEADLESS_MODE
@@ -50,17 +50,10 @@ class PJeScraperTJCE(BaseScraper):
             chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
             chrome_options.add_experimental_option('useAutomationExtension', False)
             
-            if CHROME_DRIVER_PATH:
-                service = Service(CHROME_DRIVER_PATH)
-                self.driver = webdriver.Chrome(service=service, options=chrome_options)
-            else:
-                try:
-                    from webdriver_manager.chrome import ChromeDriverManager
-                    service = Service(ChromeDriverManager().install())
-                    self.driver = webdriver.Chrome(service=service, options=chrome_options)
-                except Exception as e:
-                    print(f"Aviso: Erro ao usar webdriver-manager: {e}. Tentando sem Service...")
-                    self.driver = webdriver.Chrome(options=chrome_options)
+            self.driver = create_chrome_driver(
+                chrome_options,
+                driver_path=CHROME_DRIVER_PATH,
+            )
             
             if not use_headless:
                 self.driver.maximize_window()
