@@ -18,7 +18,9 @@ import re
 import traceback
 
 class PJeScraperTJCE(BaseScraper):
-    
+    XPATH_CAMPO_PROCESSO = "//input[contains(@id, 'numProcesso-inputNumeroProcesso')]"
+    XPATH_BOTAO_PESQUISAR = "//input[contains(@id, 'searchProcessos')]"
+
     def __init__(self, config):
         super().__init__(config)
         self.url_consulta = config.get('url_consulta', 'https://pje-consulta.tjce.jus.br/pje1grau/ConsultaPublica/listView.seam')
@@ -32,7 +34,7 @@ class PJeScraperTJCE(BaseScraper):
             chrome_options = Options()
             use_headless = self.headless or HEADLESS_MODE
             if use_headless:
-                chrome_options.add_argument("--headless")
+                chrome_options.add_argument("--headless=new")
                 chrome_options.add_argument("--no-sandbox")
                 chrome_options.add_argument("--disable-dev-shm-usage")
                 chrome_options.add_argument("--disable-gpu")
@@ -73,20 +75,36 @@ class PJeScraperTJCE(BaseScraper):
             print(traceback.format_exc())
             raise
     
+    def _sleep_apos_carregar_consulta(self, tentativa: int) -> None:
+        if tentativa == 1:
+            time.sleep(5 if SCRAPER_PROXY_CE else 2)
+        else:
+            time.sleep(1.2 + 0.3 * tentativa + (2 if SCRAPER_PROXY_CE else 0))
+
+    def _log_debug_consulta_publica(self, campo_id: str) -> None:
+        try:
+            src = self.driver.page_source or ""
+            print(
+                f"Debug consulta: title={self.driver.title!r} url={self.driver.current_url} "
+                f"input_no_html={'numProcesso-inputNumeroProcesso' in src} len={len(src)}"
+            )
+            print(f"Debug consulta: procurava id/name={campo_id!r}")
+        except Exception as e:
+            print(f"Debug consulta: falha ao ler página: {e}")
+
     def _obter_campo_numero_processo_consulta(self, campo_id: str, max_tentativas: int = 3):
         """
-        Garante o input da consulta pública com retentativas (PJe/JSF demora ou falha sob carga).
-        Cada tentativa: espera por id, depois por name — ambas com WebDriverWait (evita find_element seco).
+        Garante o input da consulta pública com retentativas (PJe/JSF demora ou falha sob carga/proxy).
+        XPath primeiro (padrão TJRN) — ids JSF com ':' falham em alguns ambientes headless+Linux.
         """
-        wait_id_s = 12
-        wait_name_s = 10
+        wait_primary_s = 20 if SCRAPER_PROXY_CE else 12
+        wait_fallback_s = 10
         campo = None
         ultimo = None
         for tentativa in range(1, max_tentativas + 1):
             if tentativa == 1:
                 print(f"Acessando: {self.url_consulta}")
                 self.driver.get(self.url_consulta)
-                time.sleep(2)
             else:
                 print(
                     f"Campo de número não disponível — tentativa {tentativa}/{max_tentativas} "
@@ -96,25 +114,35 @@ class PJeScraperTJCE(BaseScraper):
                     self.driver.get(self.url_consulta)
                 except Exception as e:
                     print(f"Aviso ao recarregar consulta: {e}")
-                time.sleep(1.2 + 0.3 * tentativa)
-            print(f"Procurando campo: {campo_id}")
+            self._sleep_apos_carregar_consulta(tentativa)
+            print(f"Procurando campo: {self.XPATH_CAMPO_PROCESSO}")
             try:
-                campo = WebDriverWait(self.driver, wait_id_s).until(
-                    EC.presence_of_element_located((By.ID, campo_id))
+                campo = WebDriverWait(self.driver, wait_primary_s).until(
+                    EC.presence_of_element_located((By.XPATH, self.XPATH_CAMPO_PROCESSO))
                 )
-                print("Campo encontrado (id)!")
+                print("Campo encontrado (xpath)!")
                 break
             except TimeoutException as e1:
                 ultimo = e1
                 try:
-                    campo = WebDriverWait(self.driver, wait_name_s).until(
-                        EC.presence_of_element_located((By.NAME, campo_id))
+                    campo = WebDriverWait(self.driver, wait_fallback_s).until(
+                        EC.presence_of_element_located((By.ID, campo_id))
                     )
-                    print("Campo encontrado (name)!")
+                    print("Campo encontrado (id)!")
                     break
                 except TimeoutException as e2:
                     ultimo = e2
-                    print("Campo não encontrado (id e name) nesta tentativa.")
+                    try:
+                        campo = WebDriverWait(self.driver, wait_fallback_s).until(
+                            EC.presence_of_element_located((By.NAME, campo_id))
+                        )
+                        print("Campo encontrado (name)!")
+                        break
+                    except TimeoutException as e3:
+                        ultimo = e3
+                        print("Campo não encontrado (xpath, id e name) nesta tentativa.")
+        if not campo:
+            self._log_debug_consulta_publica(campo_id)
         return campo, ultimo
     
     def raspar_processo(self, numero_processo: str) -> dict:
@@ -148,10 +176,16 @@ class PJeScraperTJCE(BaseScraper):
             campo_processo.clear()
             campo_processo.send_keys(numero_processo)
             print(f"Número do processo preenchido: {numero_processo}")
-            campo_processo.send_keys(Keys.RETURN)
+            try:
+                botao_pesquisar = self.driver.find_element(By.XPATH, self.XPATH_BOTAO_PESQUISAR)
+                botao_pesquisar.click()
+                print("Botão pesquisar clicado")
+            except NoSuchElementException:
+                campo_processo.send_keys(Keys.RETURN)
+                print("Pesquisa enviada com Enter")
             
             print("Aguardando resultados...")
-            time.sleep(5)
+            time.sleep(6 if SCRAPER_PROXY_CE else 5)
             try:
                 print("Procurando link do processo...")
                 
