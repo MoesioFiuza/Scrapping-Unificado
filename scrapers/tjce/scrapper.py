@@ -5,7 +5,14 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
-from config.settings import CHROME_DRIVER_PATH, CHROME_USER_DATA_DIR, CHROME_PROFILE_DIRECTORY, DELAY_ENTRE_PROCESSOS, HEADLESS_MODE
+from config.settings import (
+    CHROME_DRIVER_PATH,
+    CHROME_PROFILE_DIRECTORY,
+    CHROME_USER_DATA_DIR,
+    DELAY_ENTRE_PROCESSOS,
+    HEADLESS_MODE,
+    SCRAPER_PROXY_CE,
+)
 import time
 import re
 import traceback
@@ -19,7 +26,7 @@ class PJeScraperTJCE(BaseScraper):
     
     def setup_driver(self):
         from selenium.webdriver.chrome.options import Options
-        from scrapers.driver_utils import create_chrome_driver
+        from scrapers.driver_utils import apply_chrome_proxy, create_chrome_driver
 
         try:
             chrome_options = Options()
@@ -49,7 +56,8 @@ class PJeScraperTJCE(BaseScraper):
             chrome_options.add_argument("--disable-blink-features=AutomationControlled")
             chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
             chrome_options.add_experimental_option('useAutomationExtension', False)
-            
+            apply_chrome_proxy(chrome_options, SCRAPER_PROXY_CE)
+
             self.driver = create_chrome_driver(
                 chrome_options,
                 driver_path=CHROME_DRIVER_PATH,

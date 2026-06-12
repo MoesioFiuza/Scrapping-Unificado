@@ -12,6 +12,15 @@ from selenium.webdriver.chrome.service import Service
 logger = logging.getLogger(__name__)
 
 
+def apply_chrome_proxy(options: ChromeOptions, proxy_url: str | None) -> None:
+    """Define --proxy-server no Chrome (ex.: socks5h://127.0.0.1:1080)."""
+    proxy = (proxy_url or "").strip()
+    if not proxy:
+        return
+    options.add_argument(f"--proxy-server={proxy}")
+    logger.info("Chrome proxy activo: %s", proxy)
+
+
 def create_chrome_driver(
     options: ChromeOptions,
     *,

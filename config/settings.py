@@ -57,7 +57,10 @@ EDGE_PROFILE_DIRECTORY = os.getenv("EDGE_PROFILE_DIRECTORY", "Default")
 CHROME_USER_DATA_DIR = os.getenv('CHROME_USER_DATA_DIR') or None
 CHROME_PROFILE_DIRECTORY = os.getenv('CHROME_PROFILE_DIRECTORY', 'Default')
 
-HEADLESS_MODE = os.getenv('HEADLESS_MODE', 'True').lower() == 'true'  
+HEADLESS_MODE = os.getenv('HEADLESS_MODE', 'True').lower() == 'true'
+
+# SOCKS/HTTP proxy só para scrapers CE (TJCE PJe + eSAJ CE), ex.: túnel SSH local
+SCRAPER_PROXY_CE = (os.getenv('SCRAPER_PROXY_CE') or '').strip() or None
 
 MAX_PROCESSOS_POR_SESSAO = int(os.getenv('MAX_PROCESSOS_POR_SESSAO', '1000'))
 DELAY_ENTRE_PROCESSOS = float(os.getenv('DELAY_ENTRE_PROCESSOS', '0.5'))

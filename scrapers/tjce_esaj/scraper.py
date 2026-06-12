@@ -8,7 +8,14 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
-from config.settings import CHROME_DRIVER_PATH, CHROME_USER_DATA_DIR, CHROME_PROFILE_DIRECTORY, DELAY_ENTRE_PROCESSOS, HEADLESS_MODE
+from config.settings import (
+    CHROME_DRIVER_PATH,
+    CHROME_PROFILE_DIRECTORY,
+    CHROME_USER_DATA_DIR,
+    DELAY_ENTRE_PROCESSOS,
+    HEADLESS_MODE,
+    SCRAPER_PROXY_CE,
+)
 import time
 import re
 import traceback
@@ -28,8 +35,8 @@ class ESAJScraperTJCE(BaseScraper):
 
     def setup_driver(self):
         """Configura o driver do Chrome"""
-        from selenium.webdriver.chrome.service import Service
         from selenium.webdriver.chrome.options import Options
+        from scrapers.driver_utils import apply_chrome_proxy, create_chrome_driver
 
         try:
             chrome_options = Options()
@@ -55,19 +62,12 @@ class ESAJScraperTJCE(BaseScraper):
             chrome_options.add_argument("--disable-blink-features=AutomationControlled")
             chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
             chrome_options.add_experimental_option("useAutomationExtension", False)
+            apply_chrome_proxy(chrome_options, SCRAPER_PROXY_CE)
 
-            if CHROME_DRIVER_PATH:
-                service = Service(CHROME_DRIVER_PATH)
-                self.driver = webdriver.Chrome(service=service, options=chrome_options)
-            else:
-                try:
-                    from webdriver_manager.chrome import ChromeDriverManager
-
-                    service = Service(ChromeDriverManager().install())
-                    self.driver = webdriver.Chrome(service=service, options=chrome_options)
-                except Exception as e:
-                    print(f"Aviso: Erro ao usar webdriver-manager: {e}. Tentando sem Service...")
-                    self.driver = webdriver.Chrome(options=chrome_options)
+            self.driver = create_chrome_driver(
+                chrome_options,
+                driver_path=CHROME_DRIVER_PATH,
+            )
 
             self.driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
             self.driver.execute_cdp_cmd(
