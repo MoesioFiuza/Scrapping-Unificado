@@ -6,6 +6,7 @@ import type {
   DashboardEscritorio,
   DashboardResumo,
   DataWebProcessarResponse,
+  DataWebJobStatus,
   Extracao,
   Processo,
   ScrapingStatus,
@@ -137,6 +138,8 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ cnjs }),
       }),
+    status: (jobId: string) =>
+      request<DataWebJobStatus>(`/api/dataweb/status/${encodeURIComponent(jobId)}`),
   },
 
   extracoes: {

@@ -1,31 +1,21 @@
 import { useQuery } from '@tanstack/react-query'
 import { Database, Download, Loader2, CheckCircle2, XCircle } from 'lucide-react'
-import { toast } from 'sonner'
 import { api } from '@/lib/api'
-import type { Processo, DataWebResult } from '@/types'
+import { useDataWebJob } from '@/hooks/useDataWebJob'
+import type { Processo } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
 import { cn } from '@/lib/utils'
-
-export type { DataWebResult }
 
 interface DataWebPanelProps {
   processos: Processo[]
-  disabled?: boolean
-  onBusyChange?: (busy: boolean) => void
-  result: DataWebResult | null
-  onResult: (result: DataWebResult | null) => void
 }
 
-export function DataWebPanel({
-  processos,
-  disabled,
-  onBusyChange,
-  result,
-  onResult,
-}: DataWebPanelProps) {
+export function DataWebPanel({ processos }: DataWebPanelProps) {
   const cnjs = processos.map((p) => p.numero_processo).filter(Boolean)
   const lotes = Math.ceil(cnjs.length / 500)
+  const { busy, startJob, result, error, loteAtual, totalLotes, totalCnjs } = useDataWebJob()
 
   const { data: healthData, isLoading: healthLoading } = useQuery({
     queryKey: ['dataweb', 'health'],
@@ -35,33 +25,8 @@ export function DataWebPanel({
   })
 
   const healthy = healthData?.healthy
-
-  const processar = async () => {
-    if (!cnjs.length) {
-      toast.error('Faça upload de uma planilha com CNJs primeiro')
-      return
-    }
-    onBusyChange?.(true)
-    onResult(null)
-    try {
-      const res = await api.dataweb.processar(cnjs)
-      if (res.success && res.extracao_id && res.filename && res.total_cnjs != null) {
-        const item: DataWebResult = {
-          extracaoId: res.extracao_id,
-          filename: res.filename,
-          totalCnjs: res.total_cnjs,
-        }
-        onResult(item)
-        toast.success('Planilha DataWeb gerada com sucesso!')
-      } else {
-        toast.error(res.error || 'Erro ao processar no DataWeb')
-      }
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao contactar DataWeb')
-    } finally {
-      onBusyChange?.(false)
-    }
-  }
+  const progressPct =
+    totalLotes > 1 ? Math.round((Math.max(loteAtual, busy ? 1 : 0) / totalLotes) * 100) : undefined
 
   return (
     <div className="space-y-5">
@@ -90,19 +55,37 @@ export function DataWebPanel({
       </div>
 
       <p className="rounded-xl border border-border-subtle bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-        Consulta a API pública do DataJud via microserviço DataWeb. Envie os CNJs da planilha
-        carregada e receba um Excel com abas Dados Completos, Movimentações Recentes, Resumo e
-        Análise. O processamento é síncrono e pode levar vários minutos (até 10 min).
+        Consulta a API pública do DataJud via microserviço DataWeb. O processamento corre em
+        segundo plano — pode mudar de aba enquanto aguarda. Planilhas grandes são divididas em
+        lotes automáticos.
       </p>
+
+      {busy && (
+        <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-4">
+          <div className="mb-2 flex items-center justify-between text-sm">
+            <span className="font-semibold text-indigo-200">DataWeb em curso</span>
+            <span className="text-indigo-300/80">
+              {totalLotes > 1 ? `Lote ${loteAtual || 1}/${totalLotes}` : `${totalCnjs || cnjs.length} CNJ(s)`}
+            </span>
+          </div>
+          {progressPct !== undefined && <Progress value={progressPct} className="h-2" />}
+        </div>
+      )}
+
+      {error && !busy && (
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+          {error}
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-3">
         <Button
-          onClick={() => void processar()}
-          disabled={disabled || !cnjs.length || healthy === false}
+          onClick={() => void startJob(cnjs)}
+          disabled={busy || !cnjs.length || healthy === false}
           size="lg"
           className="min-w-[200px]"
         >
-          {disabled ? (
+          {busy ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
               Processando no DataWeb…

@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'sonner'
 import { AuthProvider } from '@/hooks/useAuth'
+import { DataWebJobProvider } from '@/hooks/useDataWebJob'
 import { ProtectedRoute } from '@/routes/ProtectedRoute'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { LoginPage } from '@/pages/LoginPage'
@@ -24,6 +25,7 @@ export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <DataWebJobProvider>
         <BrowserRouter basename={BASE_PATH || undefined}>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
@@ -57,6 +59,7 @@ export function App() {
           </Routes>
         </BrowserRouter>
         <Toaster richColors position="top-right" />
+        </DataWebJobProvider>
       </AuthProvider>
     </QueryClientProvider>
   )

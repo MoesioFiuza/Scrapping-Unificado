@@ -8,7 +8,7 @@ bp = Blueprint('extracoes', __name__, url_prefix='/api/extracoes')
 @bp.route('/listar', methods=['GET'])
 @login_required
 def listar_extracoes():
-    """Lista extrações do usuário logado"""
+    """Lista extrações do usuário logado (metadados da BD, sem ler ficheiros Excel)."""
     username = session.get('username', '')
     is_admin = session.get('role') == 'admin'
     
@@ -16,18 +16,11 @@ def listar_extracoes():
         ExtracoesService.limpar_extracoes_antigas(username, is_admin)
     
     extracoes = ExtracoesService.listar_extracoes(username, is_admin)
-    
-    extracoes_com_stats = []
-    for extracao in extracoes:
-        stats = ExtracoesService.calcular_estatisticas(extracao)
-        extracao_com_stats = extracao.copy()
-        extracao_com_stats['estatisticas'] = stats
-        extracoes_com_stats.append(extracao_com_stats)
-    
+
     return jsonify({
         'success': True,
-        'extracoes': extracoes_com_stats,
-        'total': len(extracoes_com_stats)
+        'extracoes': extracoes,
+        'total': len(extracoes),
     })
 
 @bp.route('/resumo', methods=['GET'])

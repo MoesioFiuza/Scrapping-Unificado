@@ -29,10 +29,10 @@ import { TopBar } from '@/components/layout/TopBar'
 import { DarkStatCard } from '@/components/layout/DarkStatCard'
 import { TribunaisSidebar } from '@/components/scraper/TribunaisSidebar'
 import { UploadZone } from '@/components/scraper/UploadZone'
-import { ProcessosList } from '@/components/scraper/ProcessosList'
+import { ProcessosSummary } from '@/components/scraper/ProcessosSummary'
 import { CliPanel, type CliConfig } from '@/components/scraper/CliPanel'
 import { DataWebPanel } from '@/components/scraper/DataWebPanel'
-import type { DataWebResult } from '@/types'
+import { useDataWebJob } from '@/hooks/useDataWebJob'
 import { WorkflowStepper, type WorkflowStep } from '@/components/scraper/WorkflowStepper'
 import { RecentExtractionsTable } from '@/components/scraper/RecentExtractionsTable'
 import { ActivityFeed } from '@/components/scraper/ActivityFeed'
@@ -75,13 +75,22 @@ export function ScraperPage() {
   const [sessionId, setSessionId] = useState<string | null>(initial.sessionId ?? null)
   const [cliJobId, setCliJobId] = useState<string | null>(initial.cliJobId ?? null)
   const [cliDownloads, setCliDownloads] = useState<CliDownloadItem[]>(initial.cliDownloads)
-  const [completedModo, setCompletedModo] = useState<ScraperModo | null>(initial.completedModo)
+  const [completedModo, setCompletedModo] = useState<ScraperModo | null>(
+    initial.completedModo ?? (initial.datawebResult ? 'dataweb' : null),
+  )
   const [finishedDuration, setFinishedDuration] = useState<string | null>(initial.finishedDuration)
   const [startedAt, setStartedAt] = useState<number | null>(initial.startedAt)
   const [cliConfig, setCliConfig] = useState<CliConfig>(initial.cliConfig)
   const [refreshing, setRefreshing] = useState(false)
-  const [datawebBusy, setDatawebBusy] = useState(false)
-  const [datawebResult, setDatawebResult] = useState<DataWebResult | null>(initial.datawebResult ?? null)
+  const {
+    jobId: datawebJobId,
+    busy: datawebBusy,
+    result: datawebResult,
+    clearResult: clearDatawebResult,
+    loteAtual: datawebLote,
+    totalLotes: datawebTotalLotes,
+    totalCnjs: datawebTotalCnjs,
+  } = useDataWebJob()
 
   const anyBusy = busy || datawebBusy
 
@@ -132,6 +141,7 @@ export function ScraperPage() {
       finishedDuration,
       startedAt,
       datawebResult,
+      datawebJobId,
       sessionId,
       cliJobId,
     })
@@ -145,6 +155,7 @@ export function ScraperPage() {
     finishedDuration,
     startedAt,
     datawebResult,
+    datawebJobId,
     sessionId,
     cliJobId,
   ])
@@ -174,11 +185,11 @@ export function ScraperPage() {
 
   const workflowStep: WorkflowStep = useMemo(() => {
     if (processos.length === 0) return 1
-    if (busy) return 3
+    if (busy || datawebBusy) return 3
     if (completedModo !== null) return 4
     if (doneCount === processos.length && doneCount > 0) return 4
     return 2
-  }, [processos.length, busy, doneCount, completedModo])
+  }, [processos.length, busy, datawebBusy, doneCount, completedModo])
 
   const activityExtra = useMemo(() => {
     const items: { title: string; desc: string; time: string }[] = []
@@ -195,6 +206,15 @@ export function ScraperPage() {
         desc: `${doneCount}/${processos.length} concluídos (${progressPct}%)`,
         time: 'Em progresso',
       })
+    } else if (datawebBusy) {
+      items.unshift({
+        title: 'DataWeb em curso',
+        desc:
+          datawebTotalLotes > 1
+            ? `Lote ${datawebLote || 1}/${datawebTotalLotes} · ${datawebTotalCnjs} CNJ(s)`
+            : `${datawebTotalCnjs} CNJ(s)`,
+        time: 'Em progresso',
+      })
     } else if (workflowStep === 4) {
       items.unshift({
         title: 'Extração concluída',
@@ -207,6 +227,10 @@ export function ScraperPage() {
     uploadFilename,
     processos.length,
     busy,
+    datawebBusy,
+    datawebLote,
+    datawebTotalLotes,
+    datawebTotalCnjs,
     modo,
     doneCount,
     progressPct,
@@ -296,6 +320,12 @@ export function ScraperPage() {
     },
     [queryClient, stopPolling],
   )
+
+  useEffect(() => {
+    if (datawebResult) {
+      setCompletedModo('dataweb')
+    }
+  }, [datawebResult])
 
   useEffect(() => {
     if (initial.completedModo !== null) return
@@ -432,8 +462,8 @@ export function ScraperPage() {
     setStartedAt(null)
     startedAtRef.current = null
     setCliConfig(defaultCliConfig)
-    setDatawebResult(null)
-  }, [stopPolling])
+    clearDatawebResult()
+  }, [stopPolling, clearDatawebResult])
 
   const handleRefresh = async () => {
     setRefreshing(true)
@@ -525,7 +555,7 @@ export function ScraperPage() {
                   setCliDownloads([])
                   setCompletedModo(null)
                   setFinishedDuration(null)
-                  setDatawebResult(null)
+                  clearDatawebResult()
                 }}
                 onUploaded={(list, filename) => {
                   setProcessos(list)
@@ -535,6 +565,7 @@ export function ScraperPage() {
                   setCliDownloads([])
                   setCompletedModo(null)
                   setFinishedDuration(null)
+                  clearDatawebResult()
                 }}
               />
             </div>
@@ -616,23 +647,32 @@ export function ScraperPage() {
                       <CliPanel config={cliConfig} onChange={setCliConfig} tribunaisMap={tribunaisMap} />
                     </TabsContent>
                     <TabsContent value="dataweb" className="mt-4">
-                      <DataWebPanel
-                        processos={processos}
-                        disabled={datawebBusy}
-                        onBusyChange={setDatawebBusy}
-                        result={datawebResult}
-                        onResult={(r) => {
-                          setDatawebResult(r)
-                          if (r) {
-                            setCompletedModo('dataweb')
-                            void queryClient.invalidateQueries({ queryKey: ['extracoes'] })
-                          }
-                        }}
-                      />
+                      <DataWebPanel processos={processos} />
                     </TabsContent>
                   </Tabs>
 
-                  {anyBusy && etaText && modo !== 'dataweb' && (
+                  {datawebBusy && (
+                    <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-4">
+                      <div className="mb-2 flex items-center justify-between text-sm">
+                        <span className="font-semibold text-indigo-200">DataWeb em curso</span>
+                        <span className="text-indigo-300/80">
+                          {datawebTotalLotes > 1
+                            ? `Lote ${datawebLote || 1}/${datawebTotalLotes}`
+                            : `${datawebTotalCnjs} CNJ(s)`}
+                        </span>
+                      </div>
+                      {datawebTotalLotes > 1 && (
+                        <Progress
+                          value={Math.round(
+                            (Math.max(datawebLote, 1) / datawebTotalLotes) * 100,
+                          )}
+                          className="h-2"
+                        />
+                      )}
+                    </div>
+                  )}
+
+                  {anyBusy && etaText && modo !== 'dataweb' && !datawebBusy && (
                     <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-4">
                       <div className="mb-2 flex items-center justify-between text-sm">
                         <span className="font-semibold text-indigo-200">
@@ -720,11 +760,11 @@ export function ScraperPage() {
                 <div className="border-b border-border-subtle px-6 py-5">
                   <h2 className="text-lg font-semibold">Processos</h2>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Lista completa com filtros e pesquisa.
+                    Resumo da planilha carregada. Expanda para ver a lista completa.
                   </p>
                 </div>
                 <div className="p-6">
-                  <ProcessosList processos={processos} tribunaisMap={tribunaisMap} />
+                  <ProcessosSummary processos={processos} tribunaisMap={tribunaisMap} />
                 </div>
               </div>
             </>

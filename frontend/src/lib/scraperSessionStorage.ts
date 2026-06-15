@@ -15,6 +15,7 @@ export interface ScraperPersistedState {
   finishedDuration: string | null
   startedAt: number | null
   datawebResult: DataWebResult | null
+  datawebJobId: string | null
   sessionId: string | null
   cliJobId: string | null
 }
@@ -61,6 +62,7 @@ export function initialScraperState(): ScraperPersistedState {
       ...saved,
       cliConfig: { ...defaultCliConfig, ...saved.cliConfig },
       datawebResult: saved.datawebResult ?? null,
+      datawebJobId: saved.datawebJobId ?? null,
       sessionId: saved.sessionId ?? null,
       cliJobId: saved.cliJobId ?? null,
     }
@@ -75,6 +77,7 @@ export function initialScraperState(): ScraperPersistedState {
     finishedDuration: null,
     startedAt: null,
     datawebResult: null,
+    datawebJobId: null,
     sessionId: null,
     cliJobId: null,
   }

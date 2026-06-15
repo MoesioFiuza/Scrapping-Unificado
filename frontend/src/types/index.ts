@@ -165,11 +165,25 @@ export interface DashboardEscritorio {
 
 export interface DataWebProcessarResponse {
   success: boolean
+  job_id?: string
+  total_cnjs?: number
+  total_lotes?: number
   extracao_id?: string
   filename?: string
-  total_cnjs?: number
   error?: string
   title?: string
+}
+
+export interface DataWebJobStatus {
+  success: boolean
+  status: 'queued' | 'running' | 'completed' | 'error' | 'interrupted'
+  error?: string | null
+  total_cnjs?: number
+  lote_atual?: number
+  total_lotes?: number
+  extracao_id?: string
+  filename?: string
+  started_at?: number | null
 }
 
 export interface DataWebResult {

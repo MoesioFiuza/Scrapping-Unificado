@@ -1431,7 +1431,10 @@ async function loadExtracoes() {
             }
             
             if (extracoesStats && data.extracoes.length > 0) {
-                const totalProcessos = data.extracoes.reduce((sum, e) => sum + (e.estatisticas?.total_processos || 0), 0);
+                const totalProcessos = data.extracoes.reduce(
+                    (sum, e) => sum + (e.estatisticas?.total_processos || e.total_processos || 0),
+                    0,
+                );
                 const raspado = data.extracoes.filter((e) => e.tipo === 'raspado' || e.tipo === 'raspado_cli').length;
                 const tratado = data.extracoes.filter((e) => e.tipo === 'tratado' || e.tipo === 'tratado_cli').length;
                 const cliOutros = data.extracoes.filter((e) =>

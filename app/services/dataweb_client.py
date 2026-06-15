@@ -3,7 +3,7 @@ from __future__ import annotations
 import io
 import logging
 import time
-from typing import Any
+from typing import Any, Callable
 
 import pandas as pd
 import requests
@@ -66,7 +66,12 @@ class DataWebClient:
                 out.append(c)
         return out
 
-    def processar_cnjs(self, cnjs: list[str]) -> bytes:
+    def processar_cnjs(
+        self,
+        cnjs: list[str],
+        *,
+        on_lote_progress: Callable[[int, int], None] | None = None,
+    ) -> bytes:
         cnjs = self._normalizar_cnjs(cnjs)
         if not cnjs:
             raise DataWebError(
@@ -82,20 +87,22 @@ class DataWebClient:
         # Processamento sequencial para respeitar limite de concorrência recomendado
         for idx, lote in enumerate(lotes, 1):
             logger.info("DataWeb lote %s/%s (%s CNJs)", idx, len(lotes), len(lote))
+            if on_lote_progress:
+                on_lote_progress(idx, len(lotes))
             resultados.append(self._processar_lote_com_retry(lote))
 
         if len(resultados) == 1:
             return resultados[0]
         return _mesclar_excels(resultados)
 
-    def _processar_lote_com_retry(self, cnjs: list[str], max_retries: int = 1) -> bytes:
+    def _processar_lote_com_retry(self, cnjs: list[str], max_retries: int = 2) -> bytes:
         last_err: DataWebError | None = None
         for attempt in range(max_retries + 1):
             try:
                 return self._processar_lote(cnjs)
             except DataWebError as exc:
                 last_err = exc
-                if exc.status in (422, 500) and attempt < max_retries:
+                if exc.status in (422, 500, 502, 503, 504) and attempt < max_retries:
                     logger.warning("DataWeb retry %s após erro %s", attempt + 1, exc.status)
                     time.sleep(2)
                     continue

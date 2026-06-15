@@ -24,11 +24,13 @@ logger = logging.getLogger(__name__)
 def init_database(app) -> None:
     with app.app_context():
         db.create_all()
+        from app.services.dataweb_job_service import DataWebJobService
         from app.services.encerramento_job_service import EncerramentoJobService
         from app.services.job_service import JobService
 
         JobService.mark_stale_jobs_on_startup()
         EncerramentoJobService.mark_stale_on_startup()
+        DataWebJobService.mark_stale_on_startup()
         _bootstrap_if_empty()
 
 
