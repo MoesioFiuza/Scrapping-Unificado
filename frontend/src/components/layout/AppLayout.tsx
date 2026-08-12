@@ -2,6 +2,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   PlusCircle,
   FolderOpen,
+  Download,
   Shield,
   BarChart3,
   LogOut,
@@ -15,6 +16,7 @@ import { cn } from '@/lib/utils'
 const navItems = [
   { to: '/', label: 'Nova Extração', icon: PlusCircle, end: true },
   { to: '/extracoes', label: 'Extrações', icon: FolderOpen },
+  { to: '/downloads', label: 'Downloads', icon: Download },
   { to: '/admin/dashboard', label: 'Dashboard', icon: BarChart3, adminOnly: true },
   { to: '/admin', label: 'Administração', icon: Shield, adminOnly: true },
 ]

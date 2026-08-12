@@ -156,6 +156,22 @@ export const api = {
       }),
   },
 
+  downloads: {
+    list: () =>
+      request<{
+        success: boolean
+        apps: {
+          app_id: string
+          name: string
+          version: string
+          released_at: string
+          notes: string
+          files: { label?: string; filename: string; kind?: string }[]
+        }[]
+        total: number
+      }>('/api/downloads/listar'),
+  },
+
   admin: {
     users: () =>
       request<{ success: boolean; users: AdminUser[]; is_super_admin: boolean }>(

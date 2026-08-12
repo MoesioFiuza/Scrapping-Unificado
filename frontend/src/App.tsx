@@ -8,6 +8,7 @@ import { AppLayout } from '@/components/layout/AppLayout'
 import { LoginPage } from '@/pages/LoginPage'
 import { ScraperPage } from '@/pages/ScraperPage'
 import { ExtracoesPage } from '@/pages/ExtracoesPage'
+import { DownloadsPage } from '@/pages/DownloadsPage'
 import { AdminPage } from '@/pages/AdminPage'
 import { DashboardEscritorioPage } from '@/pages/DashboardEscritorioPage'
 import { BASE_PATH } from '@/lib/paths'
@@ -38,6 +39,7 @@ export function App() {
             >
               <Route index element={<ScraperPage />} />
               <Route path="extracoes" element={<ExtracoesPage />} />
+              <Route path="downloads" element={<DownloadsPage />} />
               <Route
                 path="admin/dashboard"
                 element={
