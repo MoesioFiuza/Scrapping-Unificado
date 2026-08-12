@@ -19,6 +19,12 @@ data/output/*
 !data/input/.gitkeep
 !data/output/.gitkeep
 
+# Instaladores publicados (mantém latest.json / .gitkeep)
+data/downloads/**/*.exe
+data/downloads/**/*.zip
+!data/downloads/**/.gitkeep
+!data/downloads/**/latest.json
+
 # Ambiente
 .env
 *.env

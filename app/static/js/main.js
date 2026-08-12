@@ -828,34 +828,32 @@ checkAdminAccess();
 
 
 function switchTab(tabName) {
-    // Esconder todas as abas
     document.querySelectorAll('.tab-content').forEach(tab => {
         tab.classList.remove('active');
     });
-    
-    // Remover active de todos os botões
-    document.querySelectorAll('.btn-extracoes, .btn-scraper').forEach(btn => {
+
+    document.querySelectorAll('.btn-extracoes, .btn-downloads, .btn-scraper').forEach(btn => {
         btn.classList.remove('active');
     });
-    
-    // Mostrar aba selecionada
+
+    const scraperBtn = document.getElementById('scraperBtn');
+
     if (tabName === 'extracoes') {
         const extracoesTab = document.getElementById('extracoesTab');
         const extracoesBtn = document.getElementById('extracoesBtn');
-        const scraperBtn = document.getElementById('scraperBtn');
-        
         if (extracoesTab) extracoesTab.classList.add('active');
         if (extracoesBtn) extracoesBtn.classList.add('active');
         if (scraperBtn) scraperBtn.style.display = 'flex';
-        
-        // Carregar extrações após um pequeno delay para garantir que a aba está visível
-        setTimeout(() => {
-            loadExtracoes();
-        }, 100);
+        setTimeout(() => loadExtracoes(), 100);
+    } else if (tabName === 'downloads') {
+        const downloadsTab = document.getElementById('downloadsTab');
+        const downloadsBtn = document.getElementById('downloadsBtn');
+        if (downloadsTab) downloadsTab.classList.add('active');
+        if (downloadsBtn) downloadsBtn.classList.add('active');
+        if (scraperBtn) scraperBtn.style.display = 'flex';
+        setTimeout(() => loadDownloads(), 100);
     } else {
         const scraperTab = document.getElementById('scraperTab');
-        const scraperBtn = document.getElementById('scraperBtn');
-        
         if (scraperTab) scraperTab.classList.add('active');
         if (scraperBtn) {
             scraperBtn.classList.add('active');
@@ -864,28 +862,100 @@ function switchTab(tabName) {
     }
 }
 
-// Event listeners para botões de abas
 document.addEventListener('DOMContentLoaded', () => {
     const extracoesBtn = document.getElementById('extracoesBtn');
+    const downloadsBtn = document.getElementById('downloadsBtn');
     const scraperBtn = document.getElementById('scraperBtn');
-    
+    const refreshBtn = document.getElementById('refreshExtracoes');
+    const refreshDownloads = document.getElementById('refreshDownloads');
+
     if (extracoesBtn) {
         extracoesBtn.addEventListener('click', () => switchTab('extracoes'));
     }
-    
+    if (downloadsBtn) {
+        downloadsBtn.addEventListener('click', () => switchTab('downloads'));
+    }
     if (scraperBtn) {
         scraperBtn.addEventListener('click', () => switchTab('scraper'));
     }
-});
-
-
-document.addEventListener('DOMContentLoaded', () => {
-    // Botão de atualizar extrações
-    const refreshBtn = document.getElementById('refreshExtracoes');
     if (refreshBtn) {
         refreshBtn.addEventListener('click', loadExtracoes);
     }
+    if (refreshDownloads) {
+        refreshDownloads.addEventListener('click', loadDownloads);
+    }
 });
+
+async function loadDownloads() {
+    const downloadsTab = document.getElementById('downloadsTab');
+    const downloadsList = document.getElementById('downloadsList');
+    if (!downloadsTab || !downloadsTab.classList.contains('active') || !downloadsList) {
+        return;
+    }
+
+    downloadsList.innerHTML = `
+        <div class="extracoes-loading">
+            <span class="spinner-small"></span>
+            <span>Carregando downloads...</span>
+        </div>
+    `;
+
+    try {
+        const response = await fetch('/api/downloads/listar');
+        if (!response.ok) {
+            throw new Error('Falha ao listar downloads');
+        }
+        const data = await response.json();
+        const apps = data.apps || [];
+
+        if (!apps.length) {
+            downloadsList.innerHTML = `
+                <div class="downloads-empty">
+                    Nenhum aplicativo publicado ainda.
+                </div>
+            `;
+            return;
+        }
+
+        downloadsList.innerHTML = apps.map((app) => {
+            const version = app.version
+                ? `<strong>v${app.version}</strong>`
+                : '<em>sem versão publicada</em>';
+            const when = app.released_at
+                ? ` · ${new Date(app.released_at).toLocaleString('pt-BR')}`
+                : '';
+            const notes = app.notes
+                ? `<p class="downloads-meta">${app.notes}</p>`
+                : '';
+            const files = (app.files || []);
+            const buttons = files.length
+                ? files.map((f) => `
+                    <a class="btn btn-secondary"
+                       href="/api/downloads/file/${encodeURIComponent(app.app_id)}/${encodeURIComponent(f.filename)}"
+                       download>
+                        ${f.label || f.filename}
+                    </a>
+                `).join('')
+                : `<span class="downloads-meta">Arquivos ainda não disponíveis no servidor.</span>`;
+
+            return `
+                <div class="downloads-app-card">
+                    <h3>${app.name || app.app_id}</h3>
+                    <div class="downloads-meta">${version}${when}</div>
+                    ${notes}
+                    <div class="downloads-actions">${buttons}</div>
+                </div>
+            `;
+        }).join('');
+    } catch (error) {
+        console.error('Erro ao carregar downloads:', error);
+        downloadsList.innerHTML = `
+            <div class="downloads-empty">
+                Erro ao carregar downloads. Faça login novamente ou tente atualizar.
+            </div>
+        `;
+    }
+}
 
 async function loadExtracoes() {
     // Verificar se estamos na aba de extrações

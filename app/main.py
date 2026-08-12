@@ -67,7 +67,7 @@ app.static_url_path = '/static'
 
 # Registrar blueprints com tratamento de erro
 try:
-    from app.routes import upload, processos, resultados, auth, admin, extracoes
+    from app.routes import upload, processos, resultados, auth, admin, extracoes, downloads
     
     app.register_blueprint(upload.bp)
     app.register_blueprint(processos.bp)
@@ -75,6 +75,7 @@ try:
     app.register_blueprint(auth.bp)
     app.register_blueprint(admin.bp)
     app.register_blueprint(extracoes.bp)
+    app.register_blueprint(downloads.bp)
     
     logger.info("Blueprints registrados com sucesso")
 except Exception as e:
