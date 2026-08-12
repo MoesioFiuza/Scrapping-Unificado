@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/hooks/useAuth'
 import { DataWebProgressBanner } from '@/components/scraper/DataWebProgressBanner'
+import { ValencaUpdateBanner } from '@/components/layout/ValencaUpdateBanner'
 import { cn } from '@/lib/utils'
 
 const navItems = [
@@ -118,6 +119,7 @@ export function AppLayout() {
       <div className="flex min-h-screen flex-1 flex-col lg:pl-[248px]">
         <main className="flex-1 px-4 pb-8 pt-16 lg:px-6 lg:pt-6 xl:px-8">
           <div className="mx-auto max-w-[1600px]">
+            <ValencaUpdateBanner />
             <DataWebProgressBanner />
             <Outlet />
           </div>

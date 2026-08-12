@@ -170,6 +170,18 @@ export const api = {
         }[]
         total: number
       }>('/api/downloads/listar'),
+    latest: (appId = 'valenca') =>
+      request<{
+        success: boolean
+        app: {
+          app_id: string
+          name: string
+          version: string
+          released_at: string
+          notes: string
+          files: { label?: string; filename: string; kind?: string }[]
+        } | null
+      }>(`/api/downloads/latest/${encodeURIComponent(appId)}`),
   },
 
   admin: {
