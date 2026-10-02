@@ -18,6 +18,7 @@ instance/
 data/input/*
 data/output/*
 data/users.json
+data/builds.json
 data/extracoes.json
 data/*.db
 !data/input/.gitkeep

@@ -167,6 +167,8 @@ export const api = {
           released_at: string
           notes: string
           files: { label?: string; filename: string; kind?: string }[]
+          modules?: string[]
+          official?: boolean
         }[]
         total: number
       }>('/api/downloads/listar'),
@@ -219,6 +221,44 @@ export const api = {
       request<DashboardEscritorio>(
         `/api/admin/dashboard-escritorio?dias_taxa=${diasTaxa}`,
       ),
+    modules: () =>
+      request<{
+        success: boolean
+        official_version: string
+        categories: {
+          id: string
+          label: string
+          modules: { id: string; label: string }[]
+        }[]
+      }>('/api/admin/modules'),
+    builds: () =>
+      request<{
+        success: boolean
+        builds: {
+          id: string
+          build_id: string
+          app_id: string
+          modules: string[]
+          username: string
+          created_at: string
+          status: 'pendente' | 'pronto' | 'falha'
+          error?: string
+          actions_url?: string
+          setup_filename?: string | null
+          cached?: boolean
+        }[]
+      }>('/api/admin/builds'),
+    createBuild: (modules: string[], username: string) =>
+      request<{
+        success: boolean
+        message?: string
+        error?: string
+        build?: { id: string; app_id: string; status: string }
+        actions_url?: string
+      }>('/api/admin/builds', {
+        method: 'POST',
+        body: JSON.stringify({ modules, username }),
+      }),
   },
 }
 

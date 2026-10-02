@@ -2,7 +2,17 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Link } from 'react-router-dom'
-import { Loader2, UserPlus, Trash2, Activity, Users, CheckCircle2, ListOrdered, ScrollText, BarChart3 } from 'lucide-react'
+import {
+  Loader2,
+  UserPlus,
+  Trash2,
+  Activity,
+  Users,
+  CheckCircle2,
+  ListOrdered,
+  ScrollText,
+  BarChart3,
+} from 'lucide-react'
 import { api } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,6 +20,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { TopBar } from '@/components/layout/TopBar'
 import { DarkStatCard } from '@/components/layout/DarkStatCard'
+import { ValencaInstallerBuilder } from '@/components/admin/ValencaInstallerBuilder'
 import {
   Select,
   SelectContent,
@@ -220,6 +231,8 @@ export function AdminPage() {
           </Button>
         </div>
       </div>
+
+      <ValencaInstallerBuilder />
 
       <div className="surface-card overflow-hidden">
         <div className="border-b border-border-subtle px-6 py-4">

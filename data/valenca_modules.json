@@ -1,0 +1,44 @@
+{
+  "version": "1.0.16",
+  "categories": [
+    {
+      "id": "habilitacao",
+      "label": "Habilitação",
+      "modules": [
+        {"id": "hab_tjce_cagece", "label": "PJe TJCE — CAGECE"},
+        {"id": "hab_pje_enel_rj", "label": "PJe TJRJ — Enel (Habilitação)"},
+        {"id": "hab_eproc_enel_sp", "label": "EPROC SP — Enel (Habilitação)"},
+        {"id": "hab_eproc_enel_sp_peticao", "label": "EPROC SP — Enel (Petição)"},
+        {"id": "hab_esaj_enel_sp", "label": "eSAJ SP — Enel (Habilitação)"},
+        {"id": "hab_eproc_ndi", "label": "EPROC SP — NDI (Habilitação)"}
+      ]
+    },
+    {
+      "id": "utils",
+      "label": "Utilitários",
+      "modules": [
+        {"id": "utils_dataweb", "label": "DataWeb (DataJud)"},
+        {"id": "utils_leitor_ndi", "label": "Leitor de e-mail NDI"},
+        {"id": "utils_leitor_movida", "label": "Leitor de e-mail Movida"},
+        {"id": "utils_tratamento_jus_mov", "label": "Tratamento Jus Movimentações"},
+        {"id": "utils_busca_termos_mov", "label": "Busca de termos (movimentações)"},
+        {"id": "utils_tratamento_jusbr", "label": "Tratamento Jus BR"},
+        {"id": "utils_tratamento_esaj_tjsp", "label": "Tratamento eSAJ TJSP"},
+        {"id": "utils_tratamento_eproc_sp", "label": "Tratamento EPROC SP"}
+      ]
+    },
+    {
+      "id": "raspagem",
+      "label": "Raspagem",
+      "modules": [
+        {"id": "rasp_jusbr", "label": "Jus BR"},
+        {"id": "rasp_jusbr_robusto", "label": "Jus BR (robusto)"},
+        {"id": "rasp_jusbr_mov", "label": "Jus BR — Movimentações"},
+        {"id": "rasp_eproc_sp", "label": "EPROC SP (capa + eventos)"},
+        {"id": "rasp_pje_tjrj", "label": "PJe TJRJ (público)"},
+        {"id": "rasp_esaj_sp", "label": "eSAJ TJSP (público)"},
+        {"id": "rasp_pje_tjce", "label": "PJe TJCE (público)"}
+      ]
+    }
+  ]
+}

@@ -7,8 +7,9 @@ import os
 import re
 from pathlib import Path
 
-from flask import Blueprint, jsonify, send_file
+from flask import Blueprint, jsonify, send_file, session
 
+from app.services.valenca_build_service import OFFICIAL_APP_ID, can_access_app
 from app.utils.auth_decorator import login_required
 
 bp = Blueprint("downloads", __name__, url_prefix="/api/downloads")
@@ -35,6 +36,10 @@ def _app_dir(app_id: str) -> Path | None:
     return path
 
 
+def _current_user() -> tuple[str, str]:
+    return (session.get("username") or "", session.get("role") or "user")
+
+
 def _read_latest(app_dir: Path) -> dict | None:
     meta = app_dir / "latest.json"
     if not meta.is_file():
@@ -49,32 +54,43 @@ def _read_latest(app_dir: Path) -> dict | None:
 @bp.route("/listar", methods=["GET"])
 @login_required
 def listar_downloads():
-    """Lista apps disponíveis em data/downloads/*/latest.json."""
+    """Lista apps visíveis: canal oficial (valenca) para todos; recortes só para admin/destinatário."""
     root = _downloads_root()
     root.mkdir(parents=True, exist_ok=True)
+    username, role = _current_user()
     apps = []
     for child in sorted(root.iterdir() if root.is_dir() else []):
         if not child.is_dir():
             continue
+        app_id = child.name
+        if not can_access_app(app_id, username, role):
+            continue
         meta = _read_latest(child)
         if not meta:
             continue
+        official = app_id == OFFICIAL_APP_ID
         apps.append(
             {
-                "app_id": child.name,
+                "app_id": app_id,
                 "name": meta.get("name") or child.name,
                 "version": meta.get("version") or "",
                 "released_at": meta.get("released_at") or "",
                 "notes": meta.get("notes") or "",
                 "files": meta.get("files") or [],
+                "modules": meta.get("modules") or [],
+                "official": official,
             }
         )
+    apps.sort(key=lambda a: (not a["official"], a.get("name") or a["app_id"]))
     return jsonify({"success": True, "apps": apps, "total": len(apps)})
 
 
 @bp.route("/latest/<app_id>", methods=["GET"])
 @login_required
 def latest(app_id: str):
+    username, role = _current_user()
+    if not can_access_app(app_id, username, role):
+        return jsonify({"error": "Aplicativo não encontrado"}), 404
     app_dir = _app_dir(app_id)
     if not app_dir or not app_dir.is_dir():
         return jsonify({"error": "Aplicativo não encontrado"}), 404
@@ -88,6 +104,9 @@ def latest(app_id: str):
 @login_required
 def download_file(app_id: str, filename: str):
     """Baixa um arquivo publicado (Setup.exe / zip)."""
+    username, role = _current_user()
+    if not can_access_app(app_id, username, role):
+        return jsonify({"error": "Aplicativo não encontrado"}), 404
     if not _SAFE_NAME.match(filename or ""):
         return jsonify({"error": "Nome de arquivo inválido"}), 400
     app_dir = _app_dir(app_id)

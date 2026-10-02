@@ -3,6 +3,7 @@ from app.services.auth_service import AuthService
 from app.services.audit_service import AuditService
 from app.services.dashboard_escritorio_service import DashboardEscritorioService
 from app.services.job_service import JobService
+from app.services import valenca_build_service
 from app.utils.auth_decorator import admin_required
 from app.routes.processos import get_scraping_sessions_snapshot
 
@@ -209,3 +210,42 @@ def audit_logs():
     offset = int(request.args.get('offset', 0))
     logs, total = AuditService.list_logs(limit=limit, offset=offset)
     return jsonify({'success': True, 'logs': logs, 'total': total})
+
+
+@bp.route('/modules', methods=['GET'])
+@admin_required
+def list_modules():
+    catalog = valenca_build_service.load_catalog()
+    return jsonify({
+        'success': True,
+        'official_version': valenca_build_service.official_version(),
+        'categories': catalog.get('categories') or [],
+    })
+
+
+@bp.route('/builds', methods=['GET'])
+@admin_required
+def list_builds():
+    return jsonify({'success': True, 'builds': valenca_build_service.list_builds()})
+
+
+@bp.route('/builds', methods=['POST'])
+@admin_required
+def create_build():
+    data = request.get_json(silent=True) or {}
+    modules = data.get('modules') or []
+    username = (data.get('username') or '').strip()
+    created_by = session.get('username', '')
+    if not isinstance(modules, list):
+        return jsonify({'success': False, 'error': 'modules deve ser uma lista.'}), 400
+    try:
+        pedido, message = valenca_build_service.create_build(modules, username, created_by)
+    except ValueError as exc:
+        return jsonify({'success': False, 'error': str(exc)}), 400
+    except RuntimeError as exc:
+        return jsonify({
+            'success': False,
+            'error': str(exc),
+            'actions_url': valenca_build_service.ACTIONS_WORKFLOW_URL,
+        }), 502
+    return jsonify({'success': True, 'message': message, 'build': pedido})
