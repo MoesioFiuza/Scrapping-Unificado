@@ -11,6 +11,7 @@ import { ExtracoesPage } from '@/pages/ExtracoesPage'
 import { DownloadsPage } from '@/pages/DownloadsPage'
 import { AdminPage } from '@/pages/AdminPage'
 import { DashboardEscritorioPage } from '@/pages/DashboardEscritorioPage'
+import { DocumentosPage } from '@/pages/DocumentosPage'
 import { BASE_PATH } from '@/lib/paths'
 
 const queryClient = new QueryClient({
@@ -45,6 +46,14 @@ export function App() {
                 element={
                   <ProtectedRoute adminOnly>
                     <DashboardEscritorioPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="admin/documentos"
+                element={
+                  <ProtectedRoute adminOnly>
+                    <DocumentosPage />
                   </ProtectedRoute>
                 }
               />

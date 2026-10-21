@@ -13,6 +13,7 @@ import type {
   Tribunal,
   AdminUser,
   AuditLogEntry,
+  DocumentoEquipe,
 } from '@/types'
 import { withBase } from '@/lib/paths'
 
@@ -184,6 +185,44 @@ export const api = {
           files: { label?: string; filename: string; kind?: string }[]
         } | null
       }>(`/api/downloads/latest/${encodeURIComponent(appId)}`),
+  },
+
+  documentos: {
+    estado: () =>
+      request<{ success: boolean; equipes: DocumentoEquipe[] }>('/api/documentos/admin'),
+    upload: (
+      equipe: string,
+      slot: string,
+      file: File,
+      opts: { titulo?: string; tipo?: string; comprimir?: boolean } = {},
+    ) => {
+      const fd = new FormData()
+      fd.append('file', file)
+      if (opts.titulo) fd.append('titulo', opts.titulo)
+      if (opts.tipo) fd.append('tipo', opts.tipo)
+      fd.append('comprimir', opts.comprimir === false ? '0' : '1')
+      return request<{ success: boolean; slot: string }>(
+        `/api/documentos/admin/${encodeURIComponent(equipe)}/${encodeURIComponent(slot)}`,
+        { method: 'POST', body: fd },
+      )
+    },
+    definirTipo: (equipe: string, slot: string, tipo: string) =>
+      request<{ success: boolean }>(
+        `/api/documentos/admin/${encodeURIComponent(equipe)}/${encodeURIComponent(slot)}/tipo`,
+        { method: 'POST', body: JSON.stringify({ tipo }) },
+      ),
+    descartar: (equipe: string, slot: string) =>
+      request<{ success: boolean }>(
+        `/api/documentos/admin/${encodeURIComponent(equipe)}/${encodeURIComponent(slot)}/rascunho`,
+        { method: 'DELETE' },
+      ),
+    publicar: (equipe: string) =>
+      request<{ success: boolean; versao: number }>(
+        `/api/documentos/admin/${encodeURIComponent(equipe)}/publicar`,
+        { method: 'POST' },
+      ),
+    arquivoUrl: (sha256: string, nome: string) =>
+      withBase(`/api/documentos/arquivo/${sha256}?nome=${encodeURIComponent(nome)}`),
   },
 
   admin: {

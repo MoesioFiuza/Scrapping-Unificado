@@ -80,7 +80,7 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 CORS(app)
 
 app.config['UPLOAD_FOLDER'] = 'data/input'
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
+app.config['MAX_CONTENT_LENGTH'] = 60 * 1024 * 1024  # PDFs de habilitação antes da compressão
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -107,7 +107,9 @@ app.static_url_path = '/static'
 
 # Registrar blueprints com tratamento de erro
 try:
-    from app.routes import upload, processos, resultados, auth, admin, extracoes, dataweb, encerramento, downloads
+    from app.routes import (
+        upload, processos, resultados, auth, admin, extracoes, dataweb, encerramento, downloads, documentos,
+    )
     
     app.register_blueprint(upload.bp)
     app.register_blueprint(processos.bp)
@@ -118,6 +120,7 @@ try:
     app.register_blueprint(dataweb.bp)
     app.register_blueprint(encerramento.bp)
     app.register_blueprint(downloads.bp)
+    app.register_blueprint(documentos.bp)
     
     logger.info("Blueprints registrados com sucesso")
 except Exception as e:

@@ -191,3 +191,44 @@ export interface DataWebResult {
   filename: string
   totalCnjs: number
 }
+
+export interface DocumentoRascunho {
+  titulo: string
+  tipo: string | null
+  sha256: string | null
+  tamanho: number | null
+  tamanho_original: number | null
+  paginas: number | null
+  compressao: string | null
+  enviado_por: string | null
+  enviado_em: string
+}
+
+export interface DocumentoItem {
+  slot: string
+  ordem: number
+  titulo: string | null
+  nome_arquivo: string
+  tipo: string | null
+  publicado: {
+    sha256: string | null
+    tamanho: number | null
+    paginas: number | null
+    origem: 'servidor' | 'instalador'
+  } | null
+  rascunho: DocumentoRascunho | null
+}
+
+export interface DocumentoEquipe {
+  id: string
+  nome: string
+  sistema: string
+  tipo_editavel: boolean
+  tipos: string[]
+  pode_adicionar: boolean
+  versao: number
+  publicado_em: string | null
+  publicado_por: string | null
+  pendentes: number
+  documentos: DocumentoItem[]
+}

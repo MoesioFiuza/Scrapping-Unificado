@@ -21,6 +21,7 @@ data/users.json
 data/builds.json
 data/extracoes.json
 data/*.db
+data/documentos/
 !data/input/.gitkeep
 !data/output/.gitkeep
 
