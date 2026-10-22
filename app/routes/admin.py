@@ -96,6 +96,27 @@ def activate_user(username):
         return jsonify({'success': True, 'message': message})
     return jsonify({'success': False, 'error': message}), 400
 
+@bp.route('/users/<username>/password', methods=['POST'])
+@admin_required
+def reset_user_password(username):
+    """Redefine a senha de um utilizador. Apenas o super administrador."""
+    current_username = session.get('username', '')
+    if not AuthService.is_super_admin(current_username):
+        return jsonify({'success': False, 'error': 'Apenas o super administrador pode redefinir senhas'}), 403
+
+    data = request.get_json(silent=True) or {}
+    new_password = data.get('password') or ''
+    success, message = AuthService.reset_password(username, new_password)
+    if success:
+        AuditService.log(
+            'admin.user.password',
+            username=current_username,
+            details={'target': username},
+        )
+        return jsonify({'success': True, 'message': message})
+    return jsonify({'success': False, 'error': message}), 400
+
+
 @bp.route('/users/<username>/role', methods=['PUT'])
 @admin_required
 def update_user_role(username):

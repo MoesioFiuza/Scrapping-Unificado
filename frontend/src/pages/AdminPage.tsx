@@ -7,6 +7,7 @@ import {
   UserPlus,
   UserMinus,
   UserCheck,
+  KeyRound,
   Activity,
   Users,
   CheckCircle2,
@@ -41,6 +42,8 @@ import {
 export function AdminPage() {
   const queryClient = useQueryClient()
   const [newUser, setNewUser] = useState({ username: '', password: '', role: 'user' })
+  const [resetFor, setResetFor] = useState<string | null>(null)
+  const [resetPassword, setResetPassword] = useState('')
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-users'],
@@ -86,6 +89,17 @@ export function AdminPage() {
     onSuccess: () => {
       toast.success('Utilizador reactivado')
       void queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+    },
+    onError: (err: Error) => toast.error(err.message),
+  })
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: ({ username, password }: { username: string; password: string }) =>
+      api.admin.resetPassword(username, password),
+    onSuccess: (res) => {
+      toast.success(res.message || 'Senha redefinida')
+      setResetFor(null)
+      setResetPassword('')
     },
     onError: (err: Error) => toast.error(err.message),
   })
@@ -277,7 +291,59 @@ export function AdminPage() {
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
+                    <div className="flex flex-wrap justify-end gap-2">
+                      {isSuperAdmin && resetFor === u.username ? (
+                        <form
+                          className="flex items-center gap-2"
+                          onSubmit={(e) => {
+                            e.preventDefault()
+                            resetPasswordMutation.mutate({
+                              username: u.username,
+                              password: resetPassword,
+                            })
+                          }}
+                        >
+                          <Input
+                            type="password"
+                            placeholder="Nova senha (mín. 8)"
+                            value={resetPassword}
+                            onChange={(e) => setResetPassword(e.target.value)}
+                            className="h-9 w-44"
+                            autoFocus
+                          />
+                          <Button
+                            type="submit"
+                            size="sm"
+                            disabled={resetPasswordMutation.isPending || resetPassword.length < 8}
+                          >
+                            Guardar
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setResetFor(null)
+                              setResetPassword('')
+                            }}
+                          >
+                            Cancelar
+                          </Button>
+                        </form>
+                      ) : null}
+                      {isSuperAdmin && resetFor !== u.username ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          title="Redefinir senha"
+                          onClick={() => {
+                            setResetFor(u.username)
+                            setResetPassword('')
+                          }}
+                        >
+                          <KeyRound className="h-4 w-4" />
+                        </Button>
+                      ) : null}
                       {isSuperAdmin && (
                         <Select
                           value={u.role}

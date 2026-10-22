@@ -256,6 +256,11 @@ export const api = {
         `/api/admin/users/${encodeURIComponent(username)}/activate`,
         { method: 'POST' },
       ),
+    resetPassword: (username: string, password: string) =>
+      request<{ success: boolean; message?: string }>(
+        `/api/admin/users/${encodeURIComponent(username)}/password`,
+        { method: 'POST', body: JSON.stringify({ password }) },
+      ),
     updateRole: (username: string, role: string) =>
       request<{ success: boolean }>(
         `/api/admin/users/${encodeURIComponent(username)}/role`,

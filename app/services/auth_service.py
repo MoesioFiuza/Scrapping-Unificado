@@ -98,6 +98,17 @@ class AuthService:
         return True, 'Usuário reactivado com sucesso'
 
     @staticmethod
+    def reset_password(username, new_password):
+        user = AuthService._get_user(username)
+        if not user:
+            return False, 'Usuário não encontrado'
+        if not new_password or len(new_password) < 8:
+            return False, 'A nova senha deve ter pelo menos 8 caracteres'
+        user.password_hash = generate_password_hash(new_password)
+        db.session.commit()
+        return True, 'Senha redefinida com sucesso'
+
+    @staticmethod
     def change_password(username, current_password, new_password):
         user = AuthService._get_user(username)
         if not user or not user.is_active:
