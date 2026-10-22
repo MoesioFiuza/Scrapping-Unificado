@@ -55,24 +55,46 @@ def add_user():
 @bp.route('/users/<username>', methods=['DELETE'])
 @admin_required
 def delete_user(username):
-    """Remove um usuário"""
+    """Desactiva um usuário (soft delete)."""
     current_username = session.get('username', '')
     
     if username == current_username:
-        return jsonify({'success': False, 'error': 'Você não pode remover a si mesmo'}), 400
-    
+        return jsonify({'success': False, 'error': 'Você não pode desactivar a si mesmo'}), 400
+
+    if AuthService.is_super_admin(username):
+        return jsonify({'success': False, 'error': 'Não é possível desactivar o super administrador'}), 400
+
     if not AuthService.can_manage_admin(current_username, username):
-        return jsonify({'success': False, 'error': 'Apenas o super administrador pode remover outros administradores'}), 403
-    
-    success, message = AuthService.delete_user(username)
+        return jsonify({'success': False, 'error': 'Apenas o super administrador pode desactivar outros administradores'}), 403
+
+    success, message = AuthService.deactivate_user(username)
     if success:
         AuditService.log(
-            'admin.user.delete',
+            'admin.user.deactivate',
             username=current_username,
             details={'target': username},
         )
         return jsonify({'success': True, 'message': message})
-    return jsonify({'success': False, 'error': message}), 404
+    return jsonify({'success': False, 'error': message}), 400
+
+
+@bp.route('/users/<username>/activate', methods=['POST'])
+@admin_required
+def activate_user(username):
+    """Reactiva uma conta. Apenas o super administrador."""
+    current_username = session.get('username', '')
+    if not AuthService.is_super_admin(current_username):
+        return jsonify({'success': False, 'error': 'Apenas o super administrador pode reactivar contas'}), 403
+
+    success, message = AuthService.activate_user(username)
+    if success:
+        AuditService.log(
+            'admin.user.activate',
+            username=current_username,
+            details={'target': username},
+        )
+        return jsonify({'success': True, 'message': message})
+    return jsonify({'success': False, 'error': message}), 400
 
 @bp.route('/users/<username>/role', methods=['PUT'])
 @admin_required

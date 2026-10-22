@@ -5,7 +5,8 @@ import { Link } from 'react-router-dom'
 import {
   Loader2,
   UserPlus,
-  Trash2,
+  UserMinus,
+  UserCheck,
   Activity,
   Users,
   CheckCircle2,
@@ -71,10 +72,19 @@ export function AdminPage() {
     onError: (err: Error) => toast.error(err.message),
   })
 
-  const deleteMutation = useMutation({
-    mutationFn: (username: string) => api.admin.deleteUser(username),
+  const deactivateMutation = useMutation({
+    mutationFn: (username: string) => api.admin.deactivateUser(username),
     onSuccess: () => {
-      toast.success('Utilizador removido')
+      toast.success('Utilizador desactivado')
+      void queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+    },
+    onError: (err: Error) => toast.error(err.message),
+  })
+
+  const activateMutation = useMutation({
+    mutationFn: (username: string) => api.admin.activateUser(username),
+    onSuccess: () => {
+      toast.success('Utilizador reactivado')
       void queryClient.invalidateQueries({ queryKey: ['admin-users'] })
     },
     onError: (err: Error) => toast.error(err.message),
@@ -254,12 +264,17 @@ export function AdminPage() {
             </TableHeader>
             <TableBody>
               {users.map((u) => (
-                <TableRow key={u.username}>
+                <TableRow key={u.username} className={u.is_active === false ? 'opacity-60' : undefined}>
                   <TableCell className="font-medium">{u.username}</TableCell>
                   <TableCell>
-                    <Badge variant={u.role === 'admin' ? 'default' : 'secondary'}>
-                      {u.role === 'admin' ? 'Administrador' : 'Utilizador'}
-                    </Badge>
+                    <div className="flex flex-wrap gap-1.5">
+                      <Badge variant={u.role === 'admin' ? 'default' : 'secondary'}>
+                        {u.role === 'admin' ? 'Administrador' : 'Utilizador'}
+                      </Badge>
+                      {u.is_active === false ? (
+                        <Badge variant="warning">Inactivo</Badge>
+                      ) : null}
+                    </div>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
@@ -279,14 +294,29 @@ export function AdminPage() {
                           </SelectContent>
                         </Select>
                       )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => deleteMutation.mutate(u.username)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {u.is_active === false ? (
+                        isSuperAdmin ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => activateMutation.mutate(u.username)}
+                            disabled={activateMutation.isPending}
+                          >
+                            <UserCheck className="h-4 w-4" />
+                            Reactivar
+                          </Button>
+                        ) : null
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => deactivateMutation.mutate(u.username)}
+                          disabled={deactivateMutation.isPending}
+                        >
+                          <UserMinus className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

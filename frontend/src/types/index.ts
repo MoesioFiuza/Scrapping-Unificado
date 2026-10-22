@@ -84,6 +84,7 @@ export interface CliDownloadItem {
 export interface AdminUser {
   username: string
   role: UserRole
+  is_active: boolean
 }
 
 export interface DashboardResumo {

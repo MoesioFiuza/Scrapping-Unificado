@@ -107,7 +107,9 @@ export function ValencaInstallerBuilder() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="__none__">Ninguém específico (só admins)</SelectItem>
-                {users.map((u) => (
+                {users
+                  .filter((u) => u.is_active !== false)
+                  .map((u) => (
                   <SelectItem key={u.username} value={u.username}>
                     {u.username}
                   </SelectItem>

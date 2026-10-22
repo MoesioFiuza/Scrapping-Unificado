@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { useAuth } from '@/hooks/useAuth'
 import { DataWebProgressBanner } from '@/components/scraper/DataWebProgressBanner'
 import { ValencaUpdateBanner } from '@/components/layout/ValencaUpdateBanner'
+import { ChangePasswordForm } from '@/components/layout/ChangePasswordForm'
 import { cn } from '@/lib/utils'
 
 const navItems = [
@@ -80,6 +81,7 @@ export function AppLayout() {
         </div>
 
         <div className="border-t border-sidebar-border p-3">
+          <ChangePasswordForm />
           <Button
             variant="ghost"
             size="sm"

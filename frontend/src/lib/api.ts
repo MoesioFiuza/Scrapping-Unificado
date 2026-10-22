@@ -59,6 +59,18 @@ export const api = {
       }),
     logout: () =>
       request<{ success: boolean }>('/api/auth/logout', { method: 'POST' }),
+    changePassword: (currentPassword: string, newPassword: string, confirmPassword: string) =>
+      request<{ success: boolean; message?: string }>(
+        '/api/auth/password',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            current_password: currentPassword,
+            new_password: newPassword,
+            confirm_password: confirmPassword,
+          }),
+        },
+      ),
   },
 
   tribunais: {
@@ -235,10 +247,15 @@ export const api = {
         '/api/admin/users',
         { method: 'POST', body: JSON.stringify({ username, password, role }) },
       ),
-    deleteUser: (username: string) =>
+    deactivateUser: (username: string) =>
       request<{ success: boolean }>(`/api/admin/users/${encodeURIComponent(username)}`, {
         method: 'DELETE',
       }),
+    activateUser: (username: string) =>
+      request<{ success: boolean }>(
+        `/api/admin/users/${encodeURIComponent(username)}/activate`,
+        { method: 'POST' },
+      ),
     updateRole: (username: string, role: string) =>
       request<{ success: boolean }>(
         `/api/admin/users/${encodeURIComponent(username)}/role`,

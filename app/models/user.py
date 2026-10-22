@@ -18,4 +18,5 @@ class User(db.Model):
         return {
             'username': self.username,
             'role': self.role,
+            'is_active': self.is_active,
         }
