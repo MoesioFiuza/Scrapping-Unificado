@@ -1,4 +1,10 @@
 from scrapers.base import BaseScraper
+from scrapers.consulta_cli_common import MENSAGEM_ESAJ_SEM_INFORMACOES
+from scrapers.esaj_publico import (
+    consulta_sem_informacoes,
+    expandir_movimentacoes,
+    partes_formulario_esaj,
+)
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -137,17 +143,15 @@ class ESAJScraperTJMS(BaseScraper):
                     'erro': 'Sistema bloqueado - múltiplas consultas simultâneas'
                 }
             
-            # Extrair partes do número do processo
-            partes = re.findall(r'\d+', numero_processo)
-            if len(partes) < 5:
+            partes = partes_formulario_esaj(numero_processo)
+            if not partes:
                 return {
                     'sucesso': False,
                     'numero_processo': numero_processo,
-                    'erro': f'Formato inválido: {numero_processo}'
+                    'erro': f'Formato inválido (esperado CNJ com 20 dígitos): {numero_processo}'
                 }
             
-            numero_13_digitos = ''.join(partes[0:3])
-            foro = partes[-1]
+            numero_13_digitos, foro = partes
             
             # Preencher campos com delay aleatório (igual ao script de SP)
             import random
@@ -165,6 +169,15 @@ class ESAJScraperTJMS(BaseScraper):
             
             # Clicar em consultar
             self.driver.find_element(By.ID, "botaoConsultarProcessos").click()
+
+            if consulta_sem_informacoes(self.driver):
+                self._pular_espera = True
+                print(MENSAGEM_ESAJ_SEM_INFORMACOES)
+                return {
+                    'sucesso': False,
+                    'numero_processo': numero_processo,
+                    'erro': MENSAGEM_ESAJ_SEM_INFORMACOES,
+                }
             
             # Aguardar processamento
             time.sleep(2)
@@ -269,9 +282,11 @@ class ESAJScraperTJMS(BaseScraper):
                 'traceback': error_trace
             }
         finally:
-            # Delay aleatório entre processos (igual ao script de SP)
-            import random
-            time.sleep(random.uniform(0.5, 1.5))
+            if getattr(self, "_pular_espera", False):
+                self._pular_espera = False
+            else:
+                import random
+                time.sleep(random.uniform(0.5, 1.5))
     
     def _verificar_bloqueio(self):
         """Verifica se o sistema bloqueou o acesso (igual ao script de SP)"""
@@ -495,19 +510,7 @@ class ESAJScraperTJMS(BaseScraper):
         movimentacoes = []
         
         try:
-            # Clicar no botão "mais" até não haver mais (EXATAMENTE como no script de SP)
-            while True:
-                try:
-                    botao_mais = WebDriverWait(self.driver, 2).until(
-                        EC.element_to_be_clickable((By.ID, "linkmovimentacoes"))
-                    )
-                    self.driver.execute_script("arguments[0].scrollIntoView(true);", botao_mais)
-                    time.sleep(0.3)
-                    botao_mais.click()
-                    time.sleep(1)
-                except:
-                    # Qualquer exceção (incluindo TimeoutException) quebra o loop
-                    break
+            expandir_movimentacoes(self.driver)
             
             # Extrair as movimentações (usando Selenium ao invés de BeautifulSoup)
             try:

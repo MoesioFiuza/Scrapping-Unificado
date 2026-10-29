@@ -3,6 +3,11 @@ from scrapers.consulta_cli_common import (
     MENSAGEM_ESAJ_SEM_INFORMACOES,
     esaj_resposta_sem_informacoes,
 )
+from scrapers.esaj_publico import (
+    consulta_sem_informacoes,
+    expandir_movimentacoes,
+    partes_formulario_esaj,
+)
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -102,17 +107,15 @@ class ESAJScraperTJSP(BaseScraper):
                 EC.presence_of_element_located((By.ID, "numeroDigitoAnoUnificado"))
             )
             
-            # Extrair partes do número do processo
-            partes = re.findall(r'\d+', numero_processo)
-            if len(partes) < 5:
+            partes = partes_formulario_esaj(numero_processo)
+            if not partes:
                 return {
                     'sucesso': False,
                     'numero_processo': numero_processo,
-                    'erro': f'Formato inválido: {numero_processo}'
+                    'erro': f'Formato inválido (esperado CNJ com 20 dígitos): {numero_processo}'
                 }
             
-            numero_13_digitos = ''.join(partes[0:3])
-            foro = partes[-1]
+            numero_13_digitos, foro = partes
             
             # Preencher campos
             campo_numero = self.driver.find_element(By.ID, "numeroDigitoAnoUnificado")
@@ -125,6 +128,15 @@ class ESAJScraperTJSP(BaseScraper):
             
             # Clicar em consultar
             self.driver.find_element(By.ID, "botaoConsultarProcessos").click()
+
+            if consulta_sem_informacoes(self.driver):
+                self._pular_espera = True
+                print(MENSAGEM_ESAJ_SEM_INFORMACOES)
+                return {
+                    'sucesso': False,
+                    'numero_processo': numero_processo,
+                    'erro': MENSAGEM_ESAJ_SEM_INFORMACOES,
+                }
             
             # Aguardar resultados
             time.sleep(2)
@@ -150,6 +162,7 @@ class ESAJScraperTJSP(BaseScraper):
                 }
 
             if esaj_resposta_sem_informacoes(self.driver.page_source):
+                self._pular_espera = True
                 print(MENSAGEM_ESAJ_SEM_INFORMACOES)
                 return {
                     'sucesso': False,
@@ -186,7 +199,10 @@ class ESAJScraperTJSP(BaseScraper):
                 'traceback': error_trace
             }
         finally:
-            time.sleep(DELAY_ENTRE_PROCESSOS)
+            if getattr(self, "_pular_espera", False):
+                self._pular_espera = False
+            else:
+                time.sleep(DELAY_ENTRE_PROCESSOS)
     
     def _verificar_bloqueio(self):
         """Verifica se o sistema bloqueou o acesso"""
@@ -406,22 +422,12 @@ class ESAJScraperTJSP(BaseScraper):
         movimentacoes = []
         
         try:
-            # Clicar no botão "mais" até não haver mais
-            while True:
-                try:
-                    botao_mais = WebDriverWait(self.driver, 2).until(
-                        EC.element_to_be_clickable((By.ID, "linkmovimentacoes"))
-                    )
-                    if "Mais" in botao_mais.text or "Recolher" not in botao_mais.text:
-                        botao_mais.click()
-                        time.sleep(0.5)
-                    else:
-                        break
-                except:
-                    break
+            expandir_movimentacoes(self.driver)
             
             soup = BeautifulSoup(self.driver.page_source, "html.parser")
-            rows = soup.select("tbody#tabelaTodasMovimentacoes tr.containerMovimentacao")
+            rows = soup.select("#containerMovimentacoes tr.containerMovimentacao")
+            if not rows:
+                rows = soup.select("tbody#tabelaTodasMovimentacoes tr.containerMovimentacao")
             if not rows:
                 rows = soup.select("tr.containerMovimentacao")
             
