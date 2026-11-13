@@ -128,6 +128,12 @@ def apagar_falha(falha_id: int) -> bool:
     return True
 
 
+def apagar_todas_falhas() -> int:
+    qtd = ErroRegistro.query.delete(synchronize_session=False)
+    db.session.commit()
+    return int(qtd)
+
+
 def purgar_antigos(dias: int = DIAS_RETENCAO) -> dict:
     """Apaga logs e falhas publicados há mais de `dias`."""
     limite = datetime.utcnow() - timedelta(days=dias)

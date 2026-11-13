@@ -284,6 +284,16 @@ def apagar_falha(falha_id: int):
     return jsonify({'success': True})
 
 
+@bp.route('/erros', methods=['DELETE'])
+@admin_required
+def apagar_todas_falhas():
+    negado = _super_admin_ou_403()
+    if negado:
+        return negado
+    qtd = analise_erros_service.apagar_todas_falhas()
+    return jsonify({'success': True, 'apagadas': qtd})
+
+
 @bp.route('/acompanhamento', methods=['GET'])
 @admin_required
 def acompanhamento():

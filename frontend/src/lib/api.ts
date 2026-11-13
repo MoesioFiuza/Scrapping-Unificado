@@ -344,6 +344,8 @@ export const api = {
       request<{ success: boolean }>(`/api/admin/logs/${id}`, { method: 'DELETE' }),
     apagarFalha: (id: number) =>
       request<{ success: boolean }>(`/api/admin/erros/${id}`, { method: 'DELETE' }),
+    apagarTodasFalhas: () =>
+      request<{ success: boolean; apagadas: number }>('/api/admin/erros', { method: 'DELETE' }),
     modules: () =>
       request<{
         success: boolean

@@ -54,6 +54,12 @@ export function AnaliseErrosPage() {
       queryClient.invalidateQueries({ queryKey: ['admin-analise-erros'] })
     },
   })
+  const apagarTodasFalhas = useMutation({
+    mutationFn: () => api.admin.apagarTodasFalhas(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-analise-erros'] })
+    },
+  })
   const apagarLog = useMutation({
     mutationFn: (id: number) => api.admin.apagarLog(id),
     onSuccess: (_data, id) => {
@@ -141,7 +147,21 @@ export function AnaliseErrosPage() {
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
             <h2 className="text-sm font-semibold">Falhas</h2>
             <span className="text-sm text-muted-foreground">{linhas.length}</span>
+            <div className="ml-auto">
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                disabled={apagarTodasFalhas.isPending || linhas.length === 0}
+                onClick={() => {
+                  if (confirm(`Apagar as ${linhas.length} falhas listadas?`)) apagarTodasFalhas.mutate()
+                }}
+              >
+                Apagar falhas
+              </Button>
+            </div>
           </div>
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -189,6 +209,7 @@ export function AnaliseErrosPage() {
               ))}
             </TableBody>
           </Table>
+          </div>
         </section>
       )}
 
