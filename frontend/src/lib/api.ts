@@ -309,6 +309,7 @@ export const api = {
       request<{
         success: boolean
         linhas: {
+          id: number
           quando: string | null
           usuario: string
           servico: string
@@ -339,6 +340,10 @@ export const api = {
         servico: string
         texto: string
       }>(`/api/admin/logs/${id}`),
+    apagarLog: (id: number) =>
+      request<{ success: boolean }>(`/api/admin/logs/${id}`, { method: 'DELETE' }),
+    apagarFalha: (id: number) =>
+      request<{ success: boolean }>(`/api/admin/erros/${id}`, { method: 'DELETE' }),
     modules: () =>
       request<{
         success: boolean

@@ -54,8 +54,11 @@ chown -R "$APP_USER:$APP_USER" "$APP_DIR"
 
 # Systemd
 cp deploy/scraper.service /etc/systemd/system/scraper.service
+cp deploy/scraper-purgar-logs.service /etc/systemd/system/scraper-purgar-logs.service
+cp deploy/scraper-purgar-logs.timer /etc/systemd/system/scraper-purgar-logs.timer
 systemctl daemon-reload
 systemctl enable scraper
+systemctl enable --now scraper-purgar-logs.timer
 systemctl restart scraper
 
 # Nginx

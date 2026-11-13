@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, Loader2, ScrollText } from 'lucide-react'
 import { api } from '@/lib/api'
 import { TopBar } from '@/components/layout/TopBar'
@@ -29,6 +29,7 @@ function fmtDate(iso: string | null | undefined) {
 }
 
 export function AnaliseErrosPage() {
+  const queryClient = useQueryClient()
   const [usuario, setUsuario] = useState('')
   const [servico, setServico] = useState('')
   const [logAberto, setLogAberto] = useState<number | null>(null)
@@ -46,6 +47,19 @@ export function AnaliseErrosPage() {
     queryKey: ['admin-log', logAberto],
     queryFn: () => api.admin.log(logAberto as number),
     enabled: logAberto != null,
+  })
+  const apagarFalha = useMutation({
+    mutationFn: (id: number) => api.admin.apagarFalha(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-analise-erros'] })
+    },
+  })
+  const apagarLog = useMutation({
+    mutationFn: (id: number) => api.admin.apagarLog(id),
+    onSuccess: (_data, id) => {
+      if (logAberto === id) setLogAberto(null)
+      queryClient.invalidateQueries({ queryKey: ['admin-logs'] })
+    },
   })
 
   const usuarios = useMemo(() => {
@@ -138,18 +152,19 @@ export function AnaliseErrosPage() {
                 <TableHead>Erro</TableHead>
                 <TableHead>Versão</TableHead>
                 <TableHead>Computador</TableHead>
+                <TableHead />
               </TableRow>
             </TableHeader>
             <TableBody>
               {linhas.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-muted-foreground">
+                  <TableCell colSpan={8} className="text-muted-foreground">
                     Nenhuma falha neste filtro.
                   </TableCell>
                 </TableRow>
               )}
-              {linhas.map((item, indice) => (
-                <TableRow key={`${item.quando}-${item.cnj}-${indice}`}>
+              {linhas.map((item) => (
+                <TableRow key={item.id}>
                   <TableCell className="whitespace-nowrap">{fmtDate(item.quando)}</TableCell>
                   <TableCell>{item.usuario || '—'}</TableCell>
                   <TableCell>{item.servico}</TableCell>
@@ -157,6 +172,19 @@ export function AnaliseErrosPage() {
                   <TableCell className="max-w-md whitespace-normal">{item.erro}</TableCell>
                   <TableCell>{item.versao || '—'}</TableCell>
                   <TableCell>{item.maquina || '—'}</TableCell>
+                  <TableCell>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      disabled={apagarFalha.isPending}
+                      onClick={() => {
+                        if (confirm('Apagar esta falha?')) apagarFalha.mutate(item.id)
+                      }}
+                    >
+                      Apagar
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -198,14 +226,27 @@ export function AnaliseErrosPage() {
                   <TableCell>{item.versao || '—'}</TableCell>
                   <TableCell>{item.maquina || '—'}</TableCell>
                   <TableCell>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setLogAberto(logAberto === item.id ? null : item.id)}
-                    >
-                      {logAberto === item.id ? 'Fechar' : 'Ver log'}
-                    </Button>
+                    <div className="flex justify-end gap-1">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setLogAberto(logAberto === item.id ? null : item.id)}
+                      >
+                        {logAberto === item.id ? 'Fechar' : 'Ver log'}
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        disabled={apagarLog.isPending}
+                        onClick={() => {
+                          if (confirm('Apagar este log?')) apagarLog.mutate(item.id)
+                        }}
+                      >
+                        Apagar
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

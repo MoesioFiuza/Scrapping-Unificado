@@ -25,6 +25,12 @@ else
   echo "AVISO: faça npm run build no PC e git push (branch $BRANCH)"
 fi
 
+echo "==> timer de logs (30 dias)"
+cp deploy/scraper-purgar-logs.service /etc/systemd/system/scraper-purgar-logs.service
+cp deploy/scraper-purgar-logs.timer /etc/systemd/system/scraper-purgar-logs.timer
+systemctl daemon-reload
+systemctl enable --now scraper-purgar-logs.timer
+
 echo "==> reiniciar serviço"
 systemctl restart scraper
 sleep 2

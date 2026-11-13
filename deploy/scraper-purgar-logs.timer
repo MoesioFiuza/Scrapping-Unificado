@@ -1,0 +1,9 @@
+[Unit]
+Description=Purgar logs e falhas do scraper diariamente
+
+[Timer]
+OnCalendar=*-*-* 03:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

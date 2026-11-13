@@ -262,6 +262,28 @@ def obter_log(log_id: int):
     return jsonify({'success': True, **item})
 
 
+@bp.route('/logs/<int:log_id>', methods=['DELETE'])
+@admin_required
+def apagar_log(log_id: int):
+    negado = _super_admin_ou_403()
+    if negado:
+        return negado
+    if not analise_erros_service.apagar_log(log_id):
+        return jsonify({'success': False, 'error': 'Log não encontrado.'}), 404
+    return jsonify({'success': True})
+
+
+@bp.route('/erros/<int:falha_id>', methods=['DELETE'])
+@admin_required
+def apagar_falha(falha_id: int):
+    negado = _super_admin_ou_403()
+    if negado:
+        return negado
+    if not analise_erros_service.apagar_falha(falha_id):
+        return jsonify({'success': False, 'error': 'Falha não encontrada.'}), 404
+    return jsonify({'success': True})
+
+
 @bp.route('/acompanhamento', methods=['GET'])
 @admin_required
 def acompanhamento():

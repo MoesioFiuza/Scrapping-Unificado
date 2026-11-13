@@ -1,0 +1,11 @@
+[Unit]
+Description=Apagar logs e falhas do Valença Suite com mais de 30 dias
+After=network.target
+
+[Service]
+Type=oneshot
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/apps/scraper/repo
+EnvironmentFile=/opt/apps/scraper/repo/.env
+ExecStart=/opt/apps/scraper/repo/venv/bin/python deploy/purgar_logs.py
