@@ -9,6 +9,7 @@ import {
   Scale,
   FileText,
   Eye,
+  AlertTriangle,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/hooks/useAuth'
@@ -23,6 +24,7 @@ const navItems = [
   { to: '/downloads', label: 'Downloads', icon: Download },
   { to: '/admin/dashboard', label: 'Dashboard', icon: BarChart3, adminOnly: true },
   { to: '/admin/acompanhamento', label: 'Acompanhamento', icon: Eye, superOnly: true },
+  { to: '/admin/analise-erros', label: 'Análise de erros', icon: AlertTriangle, superOnly: true },
   { to: '/admin/documentos', label: 'Documentos', icon: FileText, adminOnly: true },
   { to: '/admin', label: 'Administração', icon: Shield, adminOnly: true, end: true },
 ]

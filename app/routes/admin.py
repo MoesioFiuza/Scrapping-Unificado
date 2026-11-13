@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from flask import Blueprint, request, jsonify, render_template, session
-from app.services import acompanhamento_service
+from app.services import acompanhamento_service, analise_erros_service
 from app.services.auth_service import AuthService
 from app.services.audit_service import AuditService
 from app.services.dashboard_escritorio_service import DashboardEscritorioService
@@ -187,6 +187,79 @@ def registrar_uso():
         iniciado_em=iniciado,
     )
     return jsonify({'success': True})
+
+
+@bp.route('/erros', methods=['POST'])
+@login_required
+def registrar_erro():
+    """O Valença Suite avisa a falha de um processo. O usuário registra a própria ocorrência."""
+    user = AuthService._get_user(session.get('username', ''))
+    if user is None:
+        return jsonify({'success': False, 'error': 'Usuário não encontrado'}), 401
+    data = request.get_json(silent=True) or {}
+    erro = str(data.get('erro') or '').strip()
+    if not erro:
+        return jsonify({'success': False, 'error': 'Informe o erro.'}), 400
+    analise_erros_service.registrar(
+        user,
+        servico=str(data.get('servico') or 'Valença Suite'),
+        cnj=str(data.get('cnj') or ''),
+        erro=erro,
+        maquina=str(data.get('maquina') or '') or None,
+        versao=str(data.get('versao') or '') or None,
+    )
+    return jsonify({'success': True})
+
+
+@bp.route('/analise-erros', methods=['GET'])
+@admin_required
+def analise_erros():
+    negado = _super_admin_ou_403()
+    if negado:
+        return negado
+    return jsonify({'success': True, **analise_erros_service.listar()})
+
+
+@bp.route('/logs', methods=['POST'])
+@login_required
+def registrar_log():
+    """O Valença Suite envia o log da execução. O usuário registra o próprio texto."""
+    user = AuthService._get_user(session.get('username', ''))
+    if user is None:
+        return jsonify({'success': False, 'error': 'Usuário não encontrado'}), 401
+    data = request.get_json(silent=True) or {}
+    texto = str(data.get('log') or '').strip()
+    if not texto:
+        return jsonify({'success': False, 'error': 'Informe o log.'}), 400
+    analise_erros_service.registrar_log(
+        user,
+        servico=str(data.get('servico') or 'Valença Suite'),
+        texto=texto,
+        maquina=str(data.get('maquina') or '') or None,
+        versao=str(data.get('versao') or '') or None,
+    )
+    return jsonify({'success': True})
+
+
+@bp.route('/logs', methods=['GET'])
+@admin_required
+def listar_logs():
+    negado = _super_admin_ou_403()
+    if negado:
+        return negado
+    return jsonify({'success': True, **analise_erros_service.listar_logs()})
+
+
+@bp.route('/logs/<int:log_id>', methods=['GET'])
+@admin_required
+def obter_log(log_id: int):
+    negado = _super_admin_ou_403()
+    if negado:
+        return negado
+    item = analise_erros_service.obter_log(log_id)
+    if item is None:
+        return jsonify({'success': False, 'error': 'Log não encontrado.'}), 404
+    return jsonify({'success': True, **item})
 
 
 @bp.route('/acompanhamento', methods=['GET'])

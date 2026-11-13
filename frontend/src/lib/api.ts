@@ -305,6 +305,40 @@ export const api = {
           vezes: number
         }[]
       }>('/api/admin/acompanhamento'),
+    analiseErros: () =>
+      request<{
+        success: boolean
+        linhas: {
+          quando: string | null
+          usuario: string
+          servico: string
+          cnj: string
+          erro: string
+          maquina: string
+          versao: string
+        }[]
+      }>('/api/admin/analise-erros'),
+    logs: () =>
+      request<{
+        success: boolean
+        logs: {
+          id: number
+          quando: string | null
+          usuario: string
+          servico: string
+          maquina: string
+          versao: string
+        }[]
+      }>('/api/admin/logs'),
+    log: (id: number) =>
+      request<{
+        success: boolean
+        id: number
+        quando: string | null
+        usuario: string
+        servico: string
+        texto: string
+      }>(`/api/admin/logs/${id}`),
     modules: () =>
       request<{
         success: boolean

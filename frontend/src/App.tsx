@@ -12,6 +12,7 @@ import { DownloadsPage } from '@/pages/DownloadsPage'
 import { AdminPage } from '@/pages/AdminPage'
 import { DashboardEscritorioPage } from '@/pages/DashboardEscritorioPage'
 import { AcompanhamentoPage } from '@/pages/AcompanhamentoPage'
+import { AnaliseErrosPage } from '@/pages/AnaliseErrosPage'
 import { DocumentosPage } from '@/pages/DocumentosPage'
 import { BASE_PATH } from '@/lib/paths'
 
@@ -55,6 +56,14 @@ export function App() {
                 element={
                   <ProtectedRoute superOnly>
                     <AcompanhamentoPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="admin/analise-erros"
+                element={
+                  <ProtectedRoute superOnly>
+                    <AnaliseErrosPage />
                   </ProtectedRoute>
                 }
               />
