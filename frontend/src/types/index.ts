@@ -4,6 +4,7 @@ export interface AuthUser {
   authenticated: boolean
   username?: string
   role?: UserRole
+  is_super_admin?: boolean
 }
 
 export type ProcessoStatus = 'pendente' | 'processando' | 'sucesso' | 'erro'

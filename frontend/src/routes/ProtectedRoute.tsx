@@ -2,8 +2,16 @@ import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { Loader2 } from 'lucide-react'
 
-export function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
-  const { isAuthenticated, isAdmin, isLoading } = useAuth()
+export function ProtectedRoute({
+  children,
+  adminOnly = false,
+  superOnly = false,
+}: {
+  children: React.ReactNode
+  adminOnly?: boolean
+  superOnly?: boolean
+}) {
+  const { isAuthenticated, isAdmin, isSuperAdmin, isLoading } = useAuth()
   const location = useLocation()
 
   if (isLoading) {
@@ -19,6 +27,10 @@ export function ProtectedRoute({ children, adminOnly = false }: { children: Reac
   }
 
   if (adminOnly && !isAdmin) {
+    return <Navigate to="/" replace />
+  }
+
+  if (superOnly && !isSuperAdmin) {
     return <Navigate to="/" replace />
   }
 

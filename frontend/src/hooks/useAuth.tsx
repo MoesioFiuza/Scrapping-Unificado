@@ -7,6 +7,7 @@ interface AuthContextValue {
   username: string | undefined
   role: UserRole | undefined
   isAdmin: boolean
+  isSuperAdmin: boolean
   isLoading: boolean
   isAuthenticated: boolean
   logout: () => Promise<void>
@@ -35,6 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     username: data?.username,
     role: data?.role as UserRole | undefined,
     isAdmin: data?.role === 'admin',
+    isSuperAdmin: !!data?.is_super_admin,
     isLoading,
     isAuthenticated: !!data?.authenticated,
     logout,

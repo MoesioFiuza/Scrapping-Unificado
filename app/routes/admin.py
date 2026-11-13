@@ -1,10 +1,13 @@
+from datetime import datetime
+
 from flask import Blueprint, request, jsonify, render_template, session
+from app.services import acompanhamento_service
 from app.services.auth_service import AuthService
 from app.services.audit_service import AuditService
 from app.services.dashboard_escritorio_service import DashboardEscritorioService
 from app.services.job_service import JobService
 from app.services import valenca_build_service
-from app.utils.auth_decorator import admin_required
+from app.utils.auth_decorator import admin_required, login_required
 from app.routes.processos import get_scraping_sessions_snapshot
 
 bp = Blueprint('admin', __name__, url_prefix='/api/admin')
@@ -150,6 +153,50 @@ def update_user_role(username):
         )
         return jsonify({'success': True, 'message': message})
     return jsonify({'success': False, 'error': message}), 404
+
+def _super_admin_ou_403():
+    username = session.get('username', '')
+    if not AuthService.is_super_admin(username):
+        return jsonify({'success': False, 'error': 'Acesso restrito ao super administrador.'}), 403
+    return None
+
+
+@bp.route('/uso', methods=['POST'])
+@login_required
+def registrar_uso():
+    """O Valença Suite avisa o fim de um fluxo. Qualquer usuário autenticado registra o próprio uso."""
+    user = AuthService._get_user(session.get('username', ''))
+    if user is None:
+        return jsonify({'success': False, 'error': 'Usuário não encontrado'}), 401
+    data = request.get_json(silent=True) or {}
+    try:
+        iniciado = None
+        bruto = data.get('iniciado_em')
+        if bruto:
+            iniciado = datetime.fromisoformat(str(bruto).replace('Z', ''))
+    except (TypeError, ValueError):
+        iniciado = None
+    acompanhamento_service.registrar(
+        user,
+        origem='valenca_suite',
+        servico=str(data.get('servico') or 'Valença Suite'),
+        maquina=str(data.get('maquina') or '') or None,
+        total=data.get('total') or 0,
+        sucesso=data.get('sucesso') or 0,
+        erro=data.get('erro') or 0,
+        iniciado_em=iniciado,
+    )
+    return jsonify({'success': True})
+
+
+@bp.route('/acompanhamento', methods=['GET'])
+@admin_required
+def acompanhamento():
+    negado = _super_admin_ou_403()
+    if negado:
+        return negado
+    return jsonify({'success': True, **acompanhamento_service.listar()})
+
 
 @bp.route('/dashboard-escritorio', methods=['GET'])
 @admin_required

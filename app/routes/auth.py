@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify, session
 from app.services.auth_service import AuthService
 from app.services.audit_service import AuditService
+from app.services import acompanhamento_service
 from app.utils.auth_decorator import login_required
 
 bp = Blueprint('auth', __name__, url_prefix='/api/auth')
@@ -20,6 +21,19 @@ def login():
         session['username'] = username
         session['role'] = user_role
         AuditService.log('auth.login.success', username=username)
+        user = AuthService._get_user(username)
+        if user is not None:
+            agente = request.headers.get("User-Agent") or ""
+            origem = "valenca_suite" if "ValencaSuite" in agente else "site"
+            try:
+                acompanhamento_service.registrar(
+                    user,
+                    origem=origem,
+                    servico="Login",
+                    maquina=agente.replace("ValencaSuite", "").strip(" ()")[:255],
+                )
+            except Exception:
+                pass
         return jsonify({
             'success': True, 
             'message': 'Login realizado com sucesso',
@@ -40,10 +54,12 @@ def logout():
 @bp.route('/check', methods=['GET'])
 def check_auth():
     if session.get('authenticated'):
+        username = session.get('username')
         return jsonify({
             'authenticated': True, 
-            'username': session.get('username'),
-            'role': session.get('role', 'user')
+            'username': username,
+            'role': session.get('role', 'user'),
+            'is_super_admin': AuthService.is_super_admin(username or ''),
         })
     return jsonify({'authenticated': False}), 401
 

@@ -11,6 +11,7 @@ import { ExtracoesPage } from '@/pages/ExtracoesPage'
 import { DownloadsPage } from '@/pages/DownloadsPage'
 import { AdminPage } from '@/pages/AdminPage'
 import { DashboardEscritorioPage } from '@/pages/DashboardEscritorioPage'
+import { AcompanhamentoPage } from '@/pages/AcompanhamentoPage'
 import { DocumentosPage } from '@/pages/DocumentosPage'
 import { BASE_PATH } from '@/lib/paths'
 
@@ -46,6 +47,14 @@ export function App() {
                 element={
                   <ProtectedRoute adminOnly>
                     <DashboardEscritorioPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="admin/acompanhamento"
+                element={
+                  <ProtectedRoute superOnly>
+                    <AcompanhamentoPage />
                   </ProtectedRoute>
                 }
               />

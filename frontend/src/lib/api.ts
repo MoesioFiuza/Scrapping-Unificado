@@ -282,6 +282,29 @@ export const api = {
       request<DashboardEscritorio>(
         `/api/admin/dashboard-escritorio?dias_taxa=${diasTaxa}`,
       ),
+    acompanhamento: () =>
+      request<{
+        success: boolean
+        linhas: {
+          quando: string | null
+          usuario: string
+          ultimo_login: string | null
+          origem: string
+          servico: string
+          total: number
+          sucesso: number
+          erro: number
+          maquina: string
+        }[]
+        resumo: {
+          usuario: string
+          ultimo_login: string | null
+          total: number
+          sucesso: number
+          erro: number
+          vezes: number
+        }[]
+      }>('/api/admin/acompanhamento'),
     modules: () =>
       request<{
         success: boolean

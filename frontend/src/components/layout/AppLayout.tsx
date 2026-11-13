@@ -8,6 +8,7 @@ import {
   LogOut,
   Scale,
   FileText,
+  Eye,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/hooks/useAuth'
@@ -21,13 +22,20 @@ const navItems = [
   { to: '/extracoes', label: 'Extrações', icon: FolderOpen },
   { to: '/downloads', label: 'Downloads', icon: Download },
   { to: '/admin/dashboard', label: 'Dashboard', icon: BarChart3, adminOnly: true },
+  { to: '/admin/acompanhamento', label: 'Acompanhamento', icon: Eye, superOnly: true },
   { to: '/admin/documentos', label: 'Documentos', icon: FileText, adminOnly: true },
   { to: '/admin', label: 'Administração', icon: Shield, adminOnly: true, end: true },
 ]
 
 export function AppLayout() {
-  const { isAdmin, logout } = useAuth()
+  const { isAdmin, isSuperAdmin, logout } = useAuth()
   const navigate = useNavigate()
+
+  const podeVer = (item: (typeof navItems)[number]) => {
+    if ('superOnly' in item && item.superOnly) return isSuperAdmin
+    if ('adminOnly' in item && item.adminOnly) return isAdmin
+    return true
+  }
 
   const handleLogout = async () => {
     await logout()
@@ -51,7 +59,7 @@ export function AppLayout() {
 
         <nav className="flex-1 space-y-0.5 px-3">
           {navItems
-            .filter((item) => !item.adminOnly || isAdmin)
+            .filter(podeVer)
             .map(({ to, label, icon: Icon, end }) => (
               <NavLink
                 key={to}
@@ -104,7 +112,7 @@ export function AppLayout() {
         </div>
         <div className="flex gap-1">
           {navItems
-            .filter((item) => !item.adminOnly || isAdmin)
+            .filter(podeVer)
             .map(({ to, icon: Icon, end }) => (
               <NavLink
                 key={to}
