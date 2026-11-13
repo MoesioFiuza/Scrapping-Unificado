@@ -1,7 +1,10 @@
+import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Eye, Loader2 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { TopBar } from '@/components/layout/TopBar'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import {
   Table,
   TableBody,
@@ -26,18 +29,87 @@ function fmtDate(iso: string | null | undefined) {
   }
 }
 
+type OrigemFiltro = 'tudo' | 'site' | 'aplicativo'
+
+const FILTROS: { id: OrigemFiltro; label: string }[] = [
+  { id: 'tudo', label: 'Tudo' },
+  { id: 'site', label: 'Site' },
+  { id: 'aplicativo', label: 'Aplicativo' },
+]
+
 export function AcompanhamentoPage() {
+  const [origem, setOrigem] = useState<OrigemFiltro>('tudo')
   const { data, isLoading, isError } = useQuery({
     queryKey: ['admin-acompanhamento'],
     queryFn: () => api.admin.acompanhamento(),
     refetchInterval: 30_000,
   })
 
+  const linhas = useMemo(() => {
+    const todas = data?.linhas ?? []
+    if (origem === 'site') return todas.filter((item) => item.origem === 'Site')
+    if (origem === 'aplicativo') return todas.filter((item) => item.origem === 'Valença Suite')
+    return todas
+  }, [data, origem])
+
+  const resumo = useMemo(() => {
+    const porUsuario = new Map<
+      string,
+      {
+        usuario: string
+        ultimo_login: string | null
+        total: number
+        sucesso: number
+        erro: number
+        vezes: number
+      }
+    >()
+    for (const item of linhas) {
+      if (item.servico === 'Login') continue
+      const atual = porUsuario.get(item.usuario) ?? {
+        usuario: item.usuario || '—',
+        ultimo_login: item.ultimo_login,
+        total: 0,
+        sucesso: 0,
+        erro: 0,
+        vezes: 0,
+      }
+      atual.total += item.total
+      atual.sucesso += item.sucesso
+      atual.erro += item.erro
+      atual.vezes += 1
+      if (item.ultimo_login && (!atual.ultimo_login || item.ultimo_login > atual.ultimo_login)) {
+        atual.ultimo_login = item.ultimo_login
+      }
+      porUsuario.set(item.usuario, atual)
+    }
+    return [...porUsuario.values()].sort((a, b) => b.vezes - a.vezes)
+  }, [linhas])
+
   return (
     <div className="mx-auto max-w-6xl">
       <TopBar
         title="Acompanhamento"
         subtitle="Quem entrou, qual serviço usou e quantos processos deram certo ou errado."
+        actions={
+          <div className="flex rounded-xl border border-border bg-card p-1">
+            {FILTROS.map((item) => (
+              <Button
+                key={item.id}
+                type="button"
+                size="sm"
+                variant="ghost"
+                className={cn(
+                  'rounded-lg px-3',
+                  origem === item.id && 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground',
+                )}
+                onClick={() => setOrigem(item.id)}
+              >
+                {item.label}
+              </Button>
+            ))}
+          </div>
+        }
       />
 
       {isLoading && (
@@ -67,14 +139,14 @@ export function AcompanhamentoPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.resumo.length === 0 && (
+                {resumo.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={6} className="text-muted-foreground">
-                      Ainda não há uso registrado.
+                      Ainda não há uso registrado neste filtro.
                     </TableCell>
                   </TableRow>
                 )}
-                {data.resumo.map((item) => (
+                {resumo.map((item) => (
                   <TableRow key={item.usuario}>
                     <TableCell>{item.usuario}</TableCell>
                     <TableCell>{fmtDate(item.ultimo_login)}</TableCell>
@@ -107,14 +179,14 @@ export function AcompanhamentoPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.linhas.length === 0 && (
+                {linhas.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={9} className="text-muted-foreground">
-                      Nenhuma atividade.
+                      Nenhuma atividade neste filtro.
                     </TableCell>
                   </TableRow>
                 )}
-                {data.linhas.map((item, index) => (
+                {linhas.map((item, index) => (
                   <TableRow key={`${item.quando}-${item.usuario}-${item.servico}-${index}`}>
                     <TableCell>{fmtDate(item.quando)}</TableCell>
                     <TableCell>{item.usuario}</TableCell>
